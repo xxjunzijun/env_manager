@@ -14,6 +14,10 @@ from app.core.card_plugin import (
     BaseCardPlugin, PluginInfo, CardData, 
     register_plugin
 )
+from app.utils.logger import get_logger
+
+
+logger = get_logger("plugin.sys_info")
 
 
 @register_plugin
@@ -24,13 +28,14 @@ class SysInfoPlugin(BaseCardPlugin):
         name="sys_info",
         version="1.0.0",
         description="获取服务器系统信息",
-        icon="🖥️",
+        icon="[SVR]",
         supported_types=["server"],
         priority=10
     )
     
     def fetch(self, ssh_conn) -> dict:
         """获取系统信息"""
+        logger.debug("SysInfoPlugin.fetch() 开始执行")
         result = {
             "cpu_usage": None,
             "memory_usage": None,
@@ -51,6 +56,7 @@ class SysInfoPlugin(BaseCardPlugin):
                     used = int(parts[2])
                     if total > 0:
                         result["memory_usage"] = round(used / total * 100, 1)
+                        logger.debug(f"内存使用率: {result['memory_usage']}%")
             
             # CPU 使用率 (通过 /proc/stat 计算)
             stdout, _, _ = ssh_conn.execute("cat /proc/stat | head -1")
@@ -63,6 +69,7 @@ class SysInfoPlugin(BaseCardPlugin):
             if stdout:
                 parts = stdout.strip().split()
                 result["load_avg"] = " ".join(parts[:3])
+                logger.debug(f"负载: {result['load_avg']}")
             
             # 获取运行时间
             stdout, _, _ = ssh_conn.execute("uptime -s")
@@ -73,10 +80,13 @@ class SysInfoPlugin(BaseCardPlugin):
             stdout, _, _ = ssh_conn.execute("hostname")
             if stdout:
                 result["hostname"] = stdout.strip()
+                logger.debug(f"主机名: {result['hostname']}")
                 
         except Exception as e:
+            logger.error(f"SysInfoPlugin.fetch() 异常: {e}")
             result["error"] = str(e)
         
+        logger.debug(f"SysInfoPlugin.fetch() 返回: {result}")
         return result
     
     def render(self, data: dict) -> list:
@@ -87,28 +97,28 @@ class SysInfoPlugin(BaseCardPlugin):
             items.append({
                 "label": "主机名",
                 "value": data["hostname"],
-                "icon": "🏷️"
+                "icon": "[TAG]"
             })
         
         if data.get("load_avg"):
             items.append({
                 "label": "负载",
                 "value": data["load_avg"],
-                "icon": "📈"
+                "icon": "[LOAD]"
             })
         
         if data.get("memory_usage") is not None:
             items.append({
                 "label": "内存",
                 "value": f"{data['memory_usage']}%",
-                "icon": "💾"
+                "icon": "[MEM]"
             })
         
         if data.get("uptime"):
             items.append({
                 "label": "运行时间",
                 "value": data["uptime"][:10],  # 只显示日期
-                "icon": "⏱️"
+                "icon": "[TIME]"
             })
         
         if data.get("error"):
@@ -129,13 +139,14 @@ class BasicInfoPlugin(BaseCardPlugin):
         name="basic_info",
         version="1.0.0",
         description="获取设备基础信息",
-        icon="📋",
+        icon="[INFO]",
         supported_types=["server", "switch"],
         priority=1  # 最优先显示
     )
     
     def fetch(self, ssh_conn) -> dict:
         """获取基础信息"""
+        logger.debug("BasicInfoPlugin.fetch() 开始执行")
         result = {
             "os_version": None,
             "kernel": None,
@@ -148,14 +159,17 @@ class BasicInfoPlugin(BaseCardPlugin):
                 stdout, _, code = ssh_conn.execute(cmd)
                 if code == 0 and stdout.strip():
                     result["os_version"] = stdout.strip()[:100]
+                    logger.debug(f"OS 版本: {result['os_version'][:50]}...")
                     break
             
             # 获取内核版本
             stdout, _, _ = ssh_conn.execute("uname -r")
             if stdout:
                 result["kernel"] = stdout.strip()
+                logger.debug(f"内核版本: {result['kernel']}")
                 
         except Exception as e:
+            logger.error(f"BasicInfoPlugin.fetch() 异常: {e}")
             result["error"] = str(e)
         
         return result
@@ -180,14 +194,14 @@ class BasicInfoPlugin(BaseCardPlugin):
             items.append({
                 "label": "系统",
                 "value": display,
-                "icon": "🖥️"
+                "icon": "[SVR]"
             })
         
         if data.get("kernel"):
             items.append({
                 "label": "内核",
                 "value": data["kernel"],
-                "icon": "⚙️"
+                "icon": "[KERNEL]"
             })
         
         return items

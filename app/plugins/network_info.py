@@ -11,6 +11,10 @@ from app.core.card_plugin import (
     BaseCardPlugin, PluginInfo, 
     register_plugin
 )
+from app.utils.logger import get_logger
+
+
+logger = get_logger("plugin.network")
 
 
 @register_plugin
@@ -21,13 +25,14 @@ class NetworkInfoPlugin(BaseCardPlugin):
         name="network_info",
         version="1.0.0",
         description="获取网络配置信息",
-        icon="🌐",
+        icon="[NET]",
         supported_types=["server"],
         priority=20
     )
     
     def fetch(self, ssh_conn) -> dict:
         """获取网络信息"""
+        logger.debug("NetworkInfoPlugin.fetch() 开始执行")
         result = {
             "ip_address": None,
             "default_gateway": None,
@@ -42,23 +47,28 @@ class NetworkInfoPlugin(BaseCardPlugin):
             )
             if stdout.strip():
                 result["ip_address"] = stdout.strip()
+                logger.debug(f"IP 地址: {result['ip_address']}")
             
             # 获取默认网关
             stdout, _, _ = ssh_conn.execute("ip route | grep default | awk '{print $3}' | head -1")
             if stdout.strip():
                 result["default_gateway"] = stdout.strip()
+                logger.debug(f"默认网关: {result['default_gateway']}")
             
             # 获取 DNS 服务器
             stdout, _, _ = ssh_conn.execute("cat /etc/resolv.conf | grep nameserver | awk '{print $2}'")
             if stdout.strip():
                 result["dns_servers"] = stdout.strip().split("\n")[:2]
+                logger.debug(f"DNS 服务器: {result['dns_servers']}")
             
             # 获取 TCP 连接数
             stdout, _, _ = ssh_conn.execute("ss -tn | grep ESTAB | wc -l")
             if stdout.strip():
                 result["tcp_connections"] = int(stdout.strip())
+                logger.debug(f"TCP 连接数: {result['tcp_connections']}")
                 
         except Exception as e:
+            logger.error(f"NetworkInfoPlugin.fetch() 异常: {e}")
             result["error"] = str(e)
         
         return result
@@ -71,28 +81,28 @@ class NetworkInfoPlugin(BaseCardPlugin):
             items.append({
                 "label": "IP",
                 "value": data["ip_address"],
-                "icon": "📍"
+                "icon": "[@]"
             })
         
         if data.get("default_gateway"):
             items.append({
                 "label": "网关",
                 "value": data["default_gateway"],
-                "icon": "🚪"
+                "icon": "[GW]"
             })
         
         if data.get("tcp_connections", 0) > 0:
             items.append({
                 "label": "连接",
                 "value": str(data["tcp_connections"]),
-                "icon": "🔗"
+                "icon": "[LINK]"
             })
         
         if data.get("dns_servers"):
             items.append({
                 "label": "DNS",
                 "value": ", ".join(data["dns_servers"]),
-                "icon": "📡"
+                "icon": "[DNS]"
             })
         
         return items

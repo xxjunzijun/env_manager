@@ -9,6 +9,10 @@ from typing import Callable, Optional
 from app.data.models import Device
 from app.ui.styles import Colors, BUTTON_STYLE
 from app.core.ssh_manager import ssh_manager
+from app.utils.logger import get_logger
+
+
+logger = get_logger("ui.dialog")
 
 
 class DeviceDialog(ft.AlertDialog):
@@ -29,6 +33,8 @@ class DeviceDialog(ft.AlertDialog):
         self.on_delete = on_delete
         self.is_edit = device is not None
         
+        logger.debug(f"DeviceDialog 创建: is_edit={self.is_edit}, device={device.name if device else 'None'}")
+        
         # 状态变量
         self.test_result = ft.Ref[ft.Text]()
         self.test_progress = ft.Ref[ft.ProgressBar]()
@@ -39,11 +45,11 @@ class DeviceDialog(ft.AlertDialog):
             segments=[
                 ft.Segment(
                     value="server",
-                    label=ft.Text("🖥️ 服务器"),
+                    label=ft.Text("[SVR] 服务器"),
                 ),
                 ft.Segment(
                     value="switch",
-                    label=ft.Text("🔌 交换机"),
+                    label=ft.Text("[SW] 交换机"),
                 ),
             ],
             selected={"server" if not self.is_edit or device.device_type == "server" else "switch"},
@@ -120,7 +126,7 @@ class DeviceDialog(ft.AlertDialog):
             modal=True,
             title=ft.Row(
                 [
-                    ft.Text("📝 编辑设备" if self.is_edit else "➕ 添加设备"),
+                    ft.Text("[EDIT] 编辑设备" if self.is_edit else "[+] 添加设备"),
                 ]
             ),
             content=ft.Container(
@@ -197,6 +203,8 @@ class DeviceDialog(ft.AlertDialog):
             self.update()
             return
         
+        logger.info(f"测试连接: {self.username_field.value}@{self.ip_field.value}:{self.port_field.value}")
+        
         self.test_progress_bar.current.visible = True
         self.test_result.current.value = "正在测试连接..."
         self.test_result.current.color = Colors.INFO
@@ -212,6 +220,8 @@ class DeviceDialog(ft.AlertDialog):
                     password=self.password_field.value or None,
                     ssh_key_path=self.ssh_key_field.value or None,
                 )
+                
+                logger.debug(f"测试连接结果: success={success}, message={message}")
                 
                 # 在主线程更新 UI - 使用 call_later
                 def update_ui():

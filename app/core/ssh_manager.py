@@ -8,14 +8,15 @@ app/core/ssh_manager.py - SSH 连接管理
 - 连接复用
 """
 
+import os
 import paramiko
-import socket
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, Future
-from app.utils.logger import setup_logger
+from app.utils.logger import get_logger
 
 
-logger = setup_logger("SSHManager")
+# 获取子 Logger
+logger = get_logger("ssh")
 
 
 class SSHConnection:
@@ -26,6 +27,7 @@ class SSHConnection:
         self.host = host
         self.port = port
         self.is_connected = True
+        logger.debug(f"SSH 连接创建: {host}:{port}")
     
     def execute(self, command: str) -> tuple[str, str, int]:
         """执行命令
@@ -34,18 +36,24 @@ class SSHConnection:
             (stdout, stderr, exit_code)
         """
         if not self.is_connected:
+            logger.warning(f"执行失败 - 连接已关闭: {self.host}")
             return "", "Not connected", 1
         
         try:
+            logger.debug(f"执行命令: {command[:100]}...")
             stdin, stdout, stderr = self.client.exec_command(command, timeout=30)
             exit_code = stdout.channel.recv_exit_status()
-            return (
-                stdout.read().decode("utf-8", errors="ignore"),
-                stderr.read().decode("utf-8", errors="ignore"),
-                exit_code
-            )
+            stdout_text = stdout.read().decode("utf-8", errors="ignore")
+            stderr_text = stderr.read().decode("utf-8", errors="ignore")
+            
+            if exit_code == 0:
+                logger.debug(f"命令执行成功: exit_code={exit_code}, output长度={len(stdout_text)}")
+            else:
+                logger.warning(f"命令执行返回非零: exit_code={exit_code}")
+            
+            return stdout_text, stderr_text, exit_code
         except Exception as e:
-            logger.error(f"执行命令失败: {e}")
+            logger.error(f"执行命令异常: {e}")
             return "", str(e), 1
     
     def close(self):
@@ -53,6 +61,7 @@ class SSHConnection:
         if self.is_connected:
             self.client.close()
             self.is_connected = False
+            logger.debug(f"SSH 连接关闭: {self.host}:{self.port}")
 
 
 class SSHManager:
@@ -65,8 +74,8 @@ class SSHManager:
     def __init__(self, max_connections: int = 10):
         self.max_connections = max_connections
         self.pool = ThreadPoolExecutor(max_workers=max_connections)
-        self._connections = {}  # {(host, port, username): SSHConnection}
-        self._lock = None  # 简化版，不使用锁
+        self._connections: Dict[tuple, SSHConnection] = {}
+        logger.info(f"SSHManager 初始化: 最大连接数={max_connections}")
     
     def connect(
         self,
@@ -107,19 +116,24 @@ class SSHManager:
             
             # 认证方式
             if ssh_key_path:
-                connect_kwargs["key_filename"] = os.path.expanduser(ssh_key_path)
+                expand_key_path = os.path.expanduser(ssh_key_path)
+                logger.debug(f"使用 SSH 密钥: {expand_key_path}")
+                connect_kwargs["key_filename"] = expand_key_path
             elif password:
                 connect_kwargs["password"] = password
             else:
+                logger.error("连接失败: 必须提供密码或 SSH 密钥")
                 raise ValueError("必须提供密码或 SSH 密钥")
             
+            # 执行连接
+            logger.debug(f"连接参数: host={host}, port={port}, username={username}")
             client.connect(**connect_kwargs)
             conn = SSHConnection(client, host, port)
-            logger.info(f"连接成功: {host}")
+            logger.info(f"SSH 连接成功: {host}:{port}")
             return conn
             
         except Exception as e:
-            logger.error(f"连接失败: {e}")
+            logger.error(f"SSH 连接失败: {host}:{port} - {str(e)}")
             raise
     
     def connect_device(
@@ -148,17 +162,25 @@ class SSHManager:
         Returns:
             (是否成功, 消息)
         """
+        logger.info(f"测试连接: {username}@{host}:{port}")
+        
         try:
             conn = self.connect(host, port, username, password, ssh_key_path, timeout)
-            _, stderr, code = conn.execute("echo ok")
+            stdout, stderr, code = conn.execute("echo 'connection_test_ok'")
             conn.close()
             
             if code == 0:
+                logger.info(f"连接测试成功: {host}:{port}")
                 return True, "连接成功"
             else:
-                return False, f"连接失败: {stderr[:100]}"
+                error_msg = stderr[:100] if stderr else "未知错误"
+                logger.warning(f"连接测试失败: {host}:{port} - {error_msg}")
+                return False, f"连接失败: {error_msg}"
+                
         except Exception as e:
-            return False, f"连接失败: {str(e)}"
+            error_msg = str(e)
+            logger.error(f"连接测试异常: {host}:{port} - {error_msg}")
+            return False, f"连接失败: {error_msg}"
     
     def execute_on_device(
         self,
@@ -172,12 +194,22 @@ class SSHManager:
         """
         在设备上执行命令（自动连接和关闭）
         """
+        logger.debug(f"远程执行: {username}@{host}:{port} - {command[:80]}...")
+        
         try:
             conn = self.connect(host, port, username, password, ssh_key_path)
             result = conn.execute(command)
             conn.close()
+            
+            stdout, stderr, code = result
+            if code == 0:
+                logger.debug(f"远程执行成功: exit_code={code}")
+            else:
+                logger.warning(f"远程执行返回非零: exit_code={code}, stderr={stderr[:50]}")
+            
             return result
         except Exception as e:
+            logger.error(f"远程执行异常: {e}")
             return "", str(e), 1
     
     def async_execute(
@@ -196,6 +228,8 @@ class SSHManager:
         Args:
             callback: 完成后的回调函数，签名为 (result_tuple)
         """
+        logger.debug(f"异步执行提交: {host}:{port}")
+        
         future = self.pool.submit(
             self.execute_on_device,
             host, port, username, command, password, ssh_key_path
@@ -203,15 +237,18 @@ class SSHManager:
         
         if callback:
             future.add_done_callback(lambda f: callback(f.result()))
+            logger.debug(f"异步执行回调已注册: {host}:{port}")
         
         return future
     
     def close_all(self):
         """关闭所有连接"""
-        for conn in self._connections.values():
+        logger.info("关闭所有 SSH 连接...")
+        for key, conn in self._connections.items():
             conn.close()
         self._connections.clear()
         self.pool.shutdown(wait=True)
+        logger.info("所有 SSH 连接已关闭")
 
 
 # 全局 SSH 管理器实例

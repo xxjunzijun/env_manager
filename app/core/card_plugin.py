@@ -10,9 +10,9 @@ app/core/card_plugin.py - 卡片插件基类
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from app.utils.logger import setup_logger
+from app.utils.logger import get_logger
 
-logger = setup_logger("CardPlugin")
+logger = get_logger("plugin")
 
 
 @dataclass
@@ -76,8 +76,8 @@ class BaseCardPlugin(ABC):
             
         Returns:
             List[Dict]: 显示项列表，如 [
-                {"label": "CPU", "value": "45%", "icon": "📊"},
-                {"label": "内存", "value": "62%", "icon": "💾"}
+                {"label": "CPU", "value": "45%", "icon": "[STAT]"},
+                {"label": "内存", "value": "62%", "icon": "[MEM]"}
             ]
         """
         pass

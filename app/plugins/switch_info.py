@@ -11,6 +11,10 @@ from app.core.card_plugin import (
     BaseCardPlugin, PluginInfo, 
     register_plugin
 )
+from app.utils.logger import get_logger
+
+
+logger = get_logger("plugin.switch")
 
 
 @register_plugin
@@ -21,13 +25,14 @@ class SwitchInfoPlugin(BaseCardPlugin):
         name="switch_info",
         version="1.0.0",
         description="获取交换机端口和 VLAN 信息",
-        icon="🔌",
+        icon="[SW]",
         supported_types=["switch"],
         priority=10
     )
     
     def fetch(self, ssh_conn) -> dict:
         """获取交换机信息"""
+        logger.debug("SwitchInfoPlugin.fetch() 开始执行")
         result = {
             "port_count": 0,
             "active_ports": 0,
@@ -55,6 +60,7 @@ class SwitchInfoPlugin(BaseCardPlugin):
                     if up_count > 0:
                         result["active_ports"] = up_count
                         result["port_count"] = len(lines)
+                        logger.debug(f"活跃端口: {result['active_ports']}/{result['port_count']}")
                     break
             
             # 获取 VLAN 信息
@@ -65,9 +71,11 @@ class SwitchInfoPlugin(BaseCardPlugin):
                 stdout, _, code = ssh_conn.execute(cmd)
                 if code == 0 and stdout.strip():
                     result["vlan_info"] = stdout.strip()[:200]
+                    logger.debug(f"VLAN 信息: {result['vlan_info'][:50]}...")
                     break
                     
         except Exception as e:
+            logger.error(f"SwitchInfoPlugin.fetch() 异常: {e}")
             result["error"] = str(e)
         
         return result
@@ -80,7 +88,7 @@ class SwitchInfoPlugin(BaseCardPlugin):
             items.append({
                 "label": "活跃端口",
                 "value": f"{data['active_ports']}/{data.get('port_count', '?')}",
-                "icon": "🔌"
+                "icon": "[PORT]"
             })
         
         if data.get("vlan_info"):
@@ -89,7 +97,7 @@ class SwitchInfoPlugin(BaseCardPlugin):
             items.append({
                 "label": "VLAN",
                 "value": vlan,
-                "icon": "🏷️"
+                "icon": "[VLAN]"
             })
         
         return items

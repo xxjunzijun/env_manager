@@ -34,8 +34,8 @@ class DeviceCard(ft.Container):
         self._hovered = False
         
         # 设备类型图标
-        type_icons = {"server": "🖥️", "switch": "🔌"}
-        icon = type_icons.get(device.device_type, "📟")
+        type_icons = {"server": "[SVR]", "switch": "[SW]"}
+        icon = type_icons.get(device.device_type, "[DEV]")
         
         # 状态指示器
         status_color = get_status_color(device.is_online)
@@ -184,7 +184,7 @@ class AddDeviceCard(ft.Container):
         
         content = ft.Column(
             [
-                ft.Text("➕", size=32),
+                ft.Text("[+]", size=32),
                 ft.Text("添加设备", size=14, color=Colors.TEXT_SECONDARY),
                 ft.Text("服务器 / 交换机", size=11, color=Colors.TEXT_DISABLED),
             ],

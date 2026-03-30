@@ -14,19 +14,20 @@ from app.ui.server_dialog import DeviceDialog
 from app.ui.styles import Colors
 from app.core.card_plugin import CardPluginRegistry
 from app.core.ssh_manager import ssh_manager
-from app.utils.logger import setup_logger
+from app.utils.logger import get_logger
 
 # 导入插件以自动注册
 from app.plugins import sys_info, network_info, switch_info
 
 
-logger = setup_logger("MainWindow")
+logger = get_logger("ui.main")
 
 
 class MainWindow:
     """主窗口"""
     
     def __init__(self, page: ft.Page):
+        logger.info("MainWindow 初始化...")
         self.page = page
         self.db = DeviceDB()
         self.devices: List[Device] = []
@@ -37,17 +38,19 @@ class MainWindow:
         self._load_devices()
         
         # 注册所有插件
-        logger.info(f"已注册插件: {[p.name for p in CardPluginRegistry.list_plugins()]}")
+        plugins = CardPluginRegistry.list_plugins()
+        logger.info(f"已注册插件: {[p.name for p in plugins]}")
+        logger.info("MainWindow 初始化完成")
     
     def _setup_page(self):
         """设置页面"""
-        self.page.title = "🖥️ Server Manager - 服务器/交换机管理"
+        logger.debug("设置页面属性...")
+        self.page.title = "[SVR] Server Manager - 服务器/交换机管理"
         self.page.theme_mode = ft.ThemeMode.LIGHT
         self.page.window_width = 1200
         self.page.window_height = 800
         self.page.padding = 0
-        
-        # 添加自定义样式
+        logger.debug("页面属性设置完成: title=Server Manager, size=1200x800")
         self.page.styles = {
             "AppBar": {
                 "bgcolor": Colors.PRIMARY,
@@ -255,6 +258,7 @@ class MainWindow:
     
     def _show_add_dialog(self, e=None):
         """显示添加设备对话框"""
+        logger.debug("打开添加设备对话框")
         dialog = DeviceDialog(
             on_save=self._handle_save_device,
         )
@@ -264,6 +268,7 @@ class MainWindow:
     
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
+        logger.debug(f"打开编辑设备对话框: id={device.id}, name={device.name}")
         dialog = DeviceDialog(
             device=device,
             on_save=self._handle_save_device,
@@ -275,6 +280,7 @@ class MainWindow:
     
     def _handle_save_device(self, device: Device):
         """保存设备"""
+        logger.info(f"保存设备: name={device.name}, type={device.device_type}")
         try:
             if device.id:
                 # 更新
@@ -291,29 +297,30 @@ class MainWindow:
                     tags=device.tags,
                     description=device.description,
                 )
-                logger.info(f"更新设备: {device.name}")
+                logger.info(f"设备更新完成: id={device.id}, name={device.name}")
             else:
                 # 新增
                 device_id = self.db.add_device(device)
                 device.id = device_id
-                logger.info(f"添加设备: {device.name}")
+                logger.info(f"设备添加完成: id={device_id}, name={device.name}")
             
             self._load_devices()
             
         except Exception as e:
-            logger.error(f"保存设备失败: {e}")
+            logger.error(f"保存设备异常: {e}")
             self.page.show_snack_bar(
                 ft.SnackBar(content=ft.Text(f"保存失败: {e}"))
             )
     
     def _handle_delete_device(self, device_id: int):
         """删除设备"""
+        logger.info(f"删除设备: id={device_id}")
         try:
             self.db.delete_device(device_id)
-            logger.info(f"删除设备: {device_id}")
+            logger.info(f"设备删除完成: id={device_id}")
             self._load_devices()
         except Exception as e:
-            logger.error(f"删除设备失败: {e}")
+            logger.error(f"删除设备异常: {e}")
             self.page.show_snack_bar(
                 ft.SnackBar(content=ft.Text(f"删除失败: {e}"))
             )
@@ -324,9 +331,11 @@ class MainWindow:
         import json
         from datetime import datetime
         
+        logger.info(f"刷新设备任务启动: id={device.id}, name={device.name}, ip={device.ip_address}")
+        
         def do_refresh():
             try:
-                logger.info(f"刷新设备: {device.name}")
+                logger.debug(f"开始 SSH 连接: {device.ip_address}:{device.port}")
                 
                 # 获取 SSH 连接
                 conn = ssh_manager.connect(
@@ -339,11 +348,13 @@ class MainWindow:
                 
                 # 获取该设备类型对应的插件
                 plugins = CardPluginRegistry.get_plugins_for_type(device.device_type)
+                logger.debug(f"找到 {len(plugins)} 个插件: {[p.info.name for p in plugins]}")
                 
                 # 合并所有插件数据
                 all_data = {}
                 for plugin in plugins:
                     try:
+                        logger.debug(f"执行插件: {plugin.info.name}")
                         data = plugin.fetch(conn)
                         all_data.update(data)
                     except Exception as e:
@@ -351,6 +362,7 @@ class MainWindow:
                 
                 # 关闭连接
                 conn.close()
+                logger.debug("SSH 连接已关闭")
                 
                 # 更新数据库
                 self.db.update_device(
@@ -368,9 +380,10 @@ class MainWindow:
                     )
                 
                 self.page.call_later(0, update_ui)
+                logger.info(f"设备刷新成功: {device.name}")
                 
             except Exception as e:
-                logger.error(f"刷新设备失败: {device.name} - {e}")
+                logger.error(f"刷新设备失败: id={device.id}, name={device.name}, error={e}")
                 
                 # 更新离线状态
                 self.db.update_device(device.id, is_online=False)

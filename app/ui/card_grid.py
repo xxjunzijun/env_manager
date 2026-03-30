@@ -119,7 +119,7 @@ class DeviceListView(ft.ListView):
                 content=ft.Row(
                     [
                         ft.Text(
-                            "🖥️" if device.device_type == "server" else "🔌",
+                            "[SVR]" if device.device_type == "server" else "[SW]",
                             size=24,
                         ),
                         ft.Column(
@@ -162,7 +162,7 @@ class DeviceListView(ft.ListView):
             add_btn = ft.Container(
                 content=ft.Row(
                     [
-                        ft.Text("➕", size=24),
+                        ft.Text("[+]", size=24),
                         ft.Text("添加新设备", size=14),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
