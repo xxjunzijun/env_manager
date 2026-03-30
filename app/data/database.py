@@ -4,7 +4,6 @@ app/data/database.py - 数据库管理
 
 import os
 from pathlib import Path
-from sqlmodel import SQLEngine
 from sqlmodel import create_engine, Session
 from app.data.models import Device, DeviceHistory
 
