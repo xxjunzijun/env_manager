@@ -213,29 +213,29 @@ class DeviceDialog(ft.AlertDialog):
                     ssh_key_path=self.ssh_key_field.value or None,
                 )
                 
-                # 在主线程更新 UI
+                # 在主线程更新 UI - 使用 call_later
                 def update_ui():
                     self.test_progress_bar.current.visible = False
                     if success:
-                        self.test_result.current.value = f"✅ {message}"
+                        self.test_result.current.value = f"[OK] {message}"
                         self.test_result.current.color = Colors.SUCCESS
                     else:
-                        self.test_result.current.value = f"❌ {message}"
+                        self.test_result.current.value = f"[X] {message}"
                         self.test_result.current.color = Colors.ERROR
                     self.save_btn.current.disabled = False
                     self.update()
                 
-                self.page.threading_update(update_ui)
+                self.page.call_later(0, update_ui)
                 
             except Exception as ex:
                 def update_ui():
                     self.test_progress_bar.current.visible = False
-                    self.test_result.current.value = f"❌ 测试失败: {str(ex)}"
+                    self.test_result.current.value = f"[X] 测试失败: {str(ex)}"
                     self.test_result.current.color = Colors.ERROR
                     self.save_btn.current.disabled = False
                     self.update()
                 
-                self.page.threading_update(update_ui)
+                self.page.call_later(0, update_ui)
         
         threading.Thread(target=test, daemon=True).start()
     

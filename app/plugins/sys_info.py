@@ -115,7 +115,7 @@ class SysInfoPlugin(BaseCardPlugin):
             items.append({
                 "label": "错误",
                 "value": data["error"][:30],
-                "icon": "❌"
+                "icon": "[X]"
             })
         
         return items

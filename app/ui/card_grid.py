@@ -135,7 +135,7 @@ class DeviceListView(ft.ListView):
                         ),
                         ft.Container(
                             content=ft.Text(
-                                "● 在线" if device.is_online else "● 离线",
+                                "[*] 在线" if device.is_online else "[X] 离线",
                                 size=12,
                                 color=Colors.SUCCESS if device.is_online else Colors.ERROR,
                             ),

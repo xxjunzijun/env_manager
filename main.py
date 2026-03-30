@@ -27,4 +27,7 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    # 新版本 Flet 使用 ft.run() 替代 ft.app()
+    # 旧版: ft.app(target=main)
+    # 新版: ft.run(main)
+    ft.run(main)

@@ -360,14 +360,14 @@ class MainWindow:
                     ext_info=json.dumps(all_data),
                 )
                 
-                # 更新 UI
+                # 更新 UI - 使用 call_later 从线程安全更新
                 def update_ui():
                     self._load_devices()
                     self.page.show_snack_bar(
                         ft.SnackBar(content=ft.Text(f"{device.name} 刷新成功"))
                     )
                 
-                self.page.threading_update(update_ui)
+                self.page.call_later(0, update_ui)
                 
             except Exception as e:
                 logger.error(f"刷新设备失败: {device.name} - {e}")
@@ -381,12 +381,6 @@ class MainWindow:
                         ft.SnackBar(content=ft.Text(f"{device.name} 刷新失败: {e}"))
                     )
                 
-                self.page.threading_update(update_ui)
+                self.page.call_later(0, update_ui)
         
         threading.Thread(target=do_refresh, daemon=True).start()
-
-
-# 添加 Flet 的 threading_update 方法
-ft.Page.threading_update = lambda page, fn: page.add(
-    ft.CallLater(0, lambda: (fn(), page.update()))
-)
