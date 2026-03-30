@@ -4,11 +4,17 @@ app/utils/logger.py - 日志工具
 
 import os
 import logging
+from pathlib import Path
 from datetime import datetime
 
 
-LOG_DIR = os.path.expanduser("~/.env_manager/logs")
-LOG_FILE = os.path.join(LOG_DIR, f"env_manager_{datetime.now().strftime('%Y%m%d')}.log")
+# 项目根目录
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+# 日志目录 (项目相对路径)
+LOG_DIR = PROJECT_ROOT / ".env_manager" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE = LOG_DIR / f"env_manager_{datetime.now().strftime('%Y%m%d')}.log"
 
 
 def setup_logger(name: str = "env_manager") -> logging.Logger:

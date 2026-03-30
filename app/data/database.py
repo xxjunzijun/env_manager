@@ -3,13 +3,19 @@ app/data/database.py - 数据库管理
 """
 
 import os
+from pathlib import Path
 from sqlmodel import SQLEngine
 from sqlmodel import create_engine, Session
 from app.data.models import Device, DeviceHistory
 
 
-# 数据库路径
-DB_PATH = os.path.expanduser("~/.env_manager/env_manager.db")
+# 项目根目录 (相对于当前文件)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+# 数据库路径 (项目相对路径)
+DATA_DIR = PROJECT_ROOT / ".env_manager"
+DATA_DIR.mkdir(exist_ok=True)
+DB_PATH = DATA_DIR / "env_manager.db"
 
 
 def get_engine():

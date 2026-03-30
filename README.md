@@ -58,6 +58,20 @@ env_manager/
 └── tests/
 ```
 
+## 数据存储
+
+数据存储在项目目录内的 `.env_manager/` 文件夹中：
+
+```
+env_manager/
+├── .env_manager/           # 项目数据目录
+│   ├── env_manager.db      # SQLite 数据库
+│   └── logs/              # 日志文件
+└── ...
+```
+
+> ⚠️ **注意**：`.env_manager/` 目录已添加到 `.gitignore`，不会被提交到 Git
+
 ## 安装
 
 ```bash
