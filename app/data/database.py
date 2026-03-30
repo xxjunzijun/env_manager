@@ -35,7 +35,7 @@ def get_engine():
 
 def init_database():
     """初始化数据库"""
-    from sqlmodel.metadata import Metadata
+    from sqlmodel import Metadata
     
     logger.info("初始化数据库...")
     engine = get_engine()
