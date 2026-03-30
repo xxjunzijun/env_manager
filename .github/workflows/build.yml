@@ -34,11 +34,13 @@ jobs:
       
       - name: Build Windows application
         env:
+          FLET_AUTO_INSTALL_FLUTTER: 1  # 自动安装 Flutter
+          FLET_NO_PROMPT: 1            # 禁用所有提示
           PYTHONIOENCODING: utf-8
           PYTHONUTF8: 1
         run: |
           chcp 65001
-          flet build windows --output dist
+          flet build windows --output dist --yes
         timeout-minutes: 60
       
       - name: Upload build artifacts
