@@ -86,7 +86,46 @@ pip install -r requirements.txt
 ## 运行
 
 ```bash
+# 开发模式
 python main.py
+```
+
+## 构建 Windows 应用
+
+### 方式一：使用脚本（推荐）
+
+```bash
+# Windows 用户双击 build.bat
+# Linux/macOS 用户运行 build.sh
+```
+
+### 方式二：手动构建
+
+```bash
+# 安装 Flet 构建工具
+pip install flet
+
+# 构建 Windows 应用
+flet build windows
+```
+
+构建完成后，`dist/` 目录下会生成 `.exe` 文件，可直接分发。
+
+### 输出文件
+
+```
+dist/
+└── env_manager_windows_x64/    # Windows x64 便携版
+    ├── env_manager.exe          # 主程序
+    └── ...
+```
+
+## 构建其他平台
+
+```bash
+flet build windows   # Windows
+flet build macos     # macOS
+flet build linux     # Linux
 ```
 
 ## 使用方法
