@@ -15,6 +15,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install flet
         timeout-minutes: 30
