@@ -67,7 +67,7 @@ class MainWindow:
         # 工具栏
         self.search_field = ft.TextField(
             hint_text="搜索设备...",
-            prefix_icon=ft.icons.SEARCH,
+            prefix_icon=ft.icons.Icons.SEARCH,
             on_change=self._on_search,
             expand=True,
         )
@@ -93,7 +93,7 @@ class MainWindow:
         )
         
         self.view_toggle = ft.IconButton(
-            icon=ft.icons.VIEW_GRID,
+            icon=ft.icons.Icons.GRID_VIEW,
             tooltip="网格视图",
             on_click=self._toggle_view,
         )
@@ -107,7 +107,7 @@ class MainWindow:
                     self.group_filter,
                     self.view_toggle,
                     ft.IconButton(
-                        icon=ft.icons.ADD,
+                        icon=ft.icons.Icons.ADD,
                         tooltip="添加设备",
                         on_click=self._show_add_dialog,
                     ),
@@ -252,7 +252,7 @@ class MainWindow:
         """切换视图"""
         self._is_grid_view = not self._is_grid_view
         self.view_toggle.icon = (
-            ft.icons.VIEW_LIST if self._is_grid_view else ft.icons.VIEW_GRID
+            ft.icons.Icons.VIEW_LIST if self._is_grid_view else ft.icons.Icons.GRID_VIEW
         )
         self._update_device_view()
     

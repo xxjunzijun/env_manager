@@ -141,11 +141,11 @@ class DeviceListView(ft.ListView):
                             ),
                         ),
                         ft.IconButton(
-                            icon=ft.icons.REFRESH,
+                            icon=ft.icons.Icons.REFRESH,
                             on_click=lambda e, d=device: self.on_card_refresh and self.on_card_refresh(d),
                         ),
                         ft.IconButton(
-                            icon=ft.icons.EDIT,
+                            icon=ft.icons.Icons.EDIT,
                             on_click=lambda e, d=device: self.on_card_click and self.on_card_click(d),
                         ),
                     ],
