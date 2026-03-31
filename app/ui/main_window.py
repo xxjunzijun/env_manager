@@ -262,15 +262,22 @@ class MainWindow:
     def _show_add_dialog(self, e=None):
         """显示添加设备对话框"""
         logger.debug("打开添加设备对话框")
-        dialog = DeviceDialog(
-            on_save=self._handle_save_device,
-        )
-        self.page.dialog = dialog
-        logger.debug(f"page.dialog set, dialog.open before={dialog.open}")
-        dialog.open = True
-        logger.debug(f"dialog.open set to True, dialog.open={dialog.open}")
-        self.page.update()
-        logger.debug(f"page.update() called, dialog.open={dialog.open}")
+        try:
+            dialog = DeviceDialog(
+                on_save=self._handle_save_device,
+            )
+            logger.debug("DeviceDialog 实例创建成功")
+        except Exception as ex:
+            logger.error(f"DeviceDialog 创建失败: {ex}", exc_info=True)
+            return
+
+        try:
+            self.page.dialog = dialog
+            dialog.open = True
+            self.page.update()
+            logger.debug(f"对话框已显示, dialog.open={dialog.open}")
+        except Exception as ex:
+            logger.error(f"对话框显示失败: {ex}", exc_info=True)
 
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
