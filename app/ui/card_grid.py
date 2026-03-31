@@ -73,9 +73,9 @@ class DeviceCardGrid(ft.Container):
             add_card = AddDeviceCard(on_click=self.on_add_click)
             self.grid.controls.append(add_card)
         
-        # 仅当控件已添加到 page 时才调用 update
-        if getattr(self, 'page', None) is not None:
-            self.update()
+        # 注意：_rebuild_grid 不在这里调用 update()
+        # page.add() 后 MainWindow.run() 会统一调 page.update()
+        pass
 
 
 class DeviceListView(ft.ListView):
@@ -175,6 +175,6 @@ class DeviceListView(ft.ListView):
             )
             self.controls.append(add_btn)
         
-        # 仅当控件已添加到 page 时才调用 update
-        if getattr(self, 'page', None) is not None:
-            self.update()
+        # 注意：_rebuild_list 不在这里调用 update()
+        # page.add() 后 MainWindow.run() 会统一调 page.update()
+        pass
