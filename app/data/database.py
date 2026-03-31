@@ -8,7 +8,7 @@ app/data/database.py - 数据库管理
 
 import os
 from pathlib import Path
-from sqlmodel import create_engine, Session
+from sqlmodel import create_engine, Session, select
 from app.data.models import Device, DeviceHistory
 from app.utils.logger import get_logger
 
@@ -35,12 +35,10 @@ def get_engine():
 
 def init_database():
     """初始化数据库"""
-    from sqlmodel import Metadata
-    
     logger.info("初始化数据库...")
     engine = get_engine()
-    metadata = Metadata()
-    metadata.create_all(engine)
+    Device.metadata.create_all(engine)
+    DeviceHistory.metadata.create_all(engine)
     logger.info(f"数据库初始化完成: {DB_PATH}")
     return engine
 
@@ -84,7 +82,7 @@ class DeviceDB:
         """获取所有设备"""
         logger.debug("查询所有设备")
         with Session(self.engine) as session:
-            devices = session.query(Device).all()
+            devices = session.exec(select(Device)).all()
             logger.debug(f"设备列表查询完成: 共 {len(devices)} 台")
             return devices
     
@@ -92,7 +90,7 @@ class DeviceDB:
         """按类型获取设备"""
         logger.debug(f"按类型查询设备: type={device_type}")
         with Session(self.engine) as session:
-            devices = session.query(Device).filter(Device.device_type == device_type).all()
+            devices = session.exec(select(Device).where(Device.device_type == device_type)).all()
             logger.debug(f"类型查询完成: {device_type} 共 {len(devices)} 台")
             return devices
     
@@ -100,7 +98,7 @@ class DeviceDB:
         """按分组获取设备"""
         logger.debug(f"按分组查询设备: group={group}")
         with Session(self.engine) as session:
-            devices = session.query(Device).filter(Device.group == group).all()
+            devices = session.exec(select(Device).where(Device.group == group)).all()
             logger.debug(f"分组查询完成: {group} 共 {len(devices)} 台")
             return devices
     
@@ -140,7 +138,7 @@ class DeviceDB:
         """获取所有分组"""
         logger.debug("查询所有分组")
         with Session(self.engine) as session:
-            groups = session.query(Device.group).distinct().all()
-            result = [g[0] for g in groups if g[0]]
+            groups = session.exec(select(Device.group).distinct()).all()
+            result = [g for g in groups if g is not None]
             logger.debug(f"分组列表: {result}")
             return result
