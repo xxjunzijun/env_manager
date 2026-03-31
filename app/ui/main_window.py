@@ -262,7 +262,6 @@ class MainWindow:
     def _show_add_dialog(self, e=None):
         """显示添加设备对话框"""
         logger.debug("打开添加设备对话框")
-        logger.debug(f"  page.dialog={self.page.dialog}, page={self.page}")
         dialog = DeviceDialog(
             on_save=self._handle_save_device,
         )
@@ -273,7 +272,6 @@ class MainWindow:
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
         logger.debug(f"打开编辑设备对话框: id={device.id}, name={device.name}")
-        logger.debug(f"  page.dialog={self.page.dialog}, page={self.page}")
         dialog = DeviceDialog(
             device=device,
             on_save=self._handle_save_device,
