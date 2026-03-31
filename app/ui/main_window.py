@@ -266,8 +266,11 @@ class MainWindow:
             on_save=self._handle_save_device,
         )
         self.page.dialog = dialog
+        logger.debug(f"page.dialog set, dialog.open before={dialog.open}")
         dialog.open = True
+        logger.debug(f"dialog.open set to True, dialog.open={dialog.open}")
         self.page.update()
+        logger.debug(f"page.update() called, dialog.open={dialog.open}")
 
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
