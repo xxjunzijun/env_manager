@@ -88,7 +88,7 @@ class DeviceDialog(ft.AlertDialog):
         self.password_field = ft.TextField(
             label="密码",
             hint_text="SSH 密码",
-            value=device.password or "",
+            value=device.password if self.is_edit else "",
             password=True,
             can_reveal_password=True,
         )
@@ -96,25 +96,25 @@ class DeviceDialog(ft.AlertDialog):
         self.ssh_key_field = ft.TextField(
             label="SSH 密钥路径 (可选)",
             hint_text="如: ~/.ssh/id_rsa",
-            value=device.ssh_key_path or "",
+            value=device.ssh_key_path if self.is_edit else "",
         )
         
         self.group_field = ft.TextField(
             label="分组 (可选)",
             hint_text="如: 生产环境、测试环境",
-            value=device.group or "",
+            value=device.group if self.is_edit else "",
         )
         
         self.tags_field = ft.TextField(
             label="标签 (可选)",
             hint_text="逗号分隔，如: web, db, nginx",
-            value=device.tags or "",
+            value=device.tags if self.is_edit else "",
         )
         
         self.description_field = ft.TextField(
             label="备注 (可选)",
             hint_text="其他说明...",
-            value=device.description or "",
+            value=device.description if self.is_edit else "",
             max_lines=2,
         )
         
