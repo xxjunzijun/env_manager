@@ -187,6 +187,42 @@ class TestImports:
 
         assert "on_change" in params, "TextField should have on_change"
 
+    def test_flet_alignment_constants(self):
+        """验证 ft.alignment.Alignment.TOP_LEFT 等常量可用（Flet 0.83+）"""
+        import flet as ft
+
+        assert hasattr(ft.alignment.Alignment, "TOP_LEFT")
+        assert hasattr(ft.alignment.Alignment, "CENTER")
+        assert hasattr(ft.alignment.Alignment, "TOP_RIGHT")
+
+    def test_flet_border_api(self):
+        """验证 ft.Border.all() API 可用（Flet 0.83+）"""
+        import flet as ft
+
+        b = ft.Border.all(width=1, color="#000000")
+        assert b is not None
+        assert hasattr(b, "top")
+        assert hasattr(b, "left")
+
+    def test_flet_button_style_no_text_size(self):
+        """验证 ButtonStyle 不接受 text_size 直接参数（Flet 0.83+）"""
+        import flet as ft
+        import inspect
+
+        sig = inspect.signature(ft.ButtonStyle.__init__)
+        params = list(sig.parameters.keys())
+        assert "text_size" not in params, "ButtonStyle should not have direct text_size param"
+
+    def test_flet_container_no_border_width(self):
+        """验证 Container 不接受 border_width 参数（Flet 0.83+）"""
+        import flet as ft
+        import inspect
+
+        sig = inspect.signature(ft.Container.__init__)
+        params = list(sig.parameters.keys())
+        assert "border_width" not in params, "Container should not have border_width param"
+        assert "border_color" not in params, "Container should not have border_color param"
+
     def test_flet_segmented_button_has_on_change(self):
         """验证 SegmentedButton 使用 on_change（不受影响）"""
         import flet as ft

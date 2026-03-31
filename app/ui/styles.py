@@ -38,8 +38,7 @@ CARD_STYLE = {
     "width": 220,
     "height": 200,
     "border_radius": 12,
-    "border_width": 1,
-    "border_color": Colors.BORDER,
+    "border": ft.Border.all(width=1, color=Colors.BORDER),
     "bgcolor": Colors.CARD_BG,
     "shadow": ft.BoxShadow(
         spread_radius=1,
@@ -50,7 +49,7 @@ CARD_STYLE = {
 }
 
 CARD_HOVER_STYLE = {
-    "border_color": Colors.PRIMARY,
+    "border": ft.Border.all(width=1, color=Colors.PRIMARY),
     "shadow": ft.BoxShadow(
         spread_radius=2,
         blur_radius=8,

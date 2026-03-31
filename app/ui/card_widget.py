@@ -29,8 +29,8 @@ class DeviceCard(ft.Container):
         **kwargs
     ):
         self.device = device
-        self.on_click = on_click
-        self.on_refresh = on_refresh
+        self._user_on_click = on_click
+        self._user_on_refresh = on_refresh
         self._hovered = False
         
         # 设备类型图标
@@ -100,7 +100,7 @@ class DeviceCard(ft.Container):
                 ft.Container(
                     content=ft.Column([], spacing=2),
                     expand=True,
-                    alignment=ft.alignment.top_left,
+                    alignment=ft.alignment.Alignment.TOP_LEFT,
                 ),
                 
                 # 底部操作按钮
@@ -110,18 +110,18 @@ class DeviceCard(ft.Container):
                             "刷新",
                             icon="refresh",
                             on_click=self._handle_refresh,
-                            style=ft.TextButtonStyle(
+                            style=ft.ButtonStyle(
                                 icon_size=14,
-                                text_size=12,
+                                text_style=ft.TextStyle(size=12),
                             ),
                         ),
                         ft.TextButton(
                             "编辑",
                             icon="edit",
                             on_click=self._handle_click,
-                            style=ft.TextButtonStyle(
+                            style=ft.ButtonStyle(
                                 icon_size=14,
-                                text_size=12,
+                                text_style=ft.TextStyle(size=12),
                             ),
                         ),
                     ],
@@ -139,12 +139,12 @@ class DeviceCard(ft.Container):
         )
     
     def _handle_click(self, e):
-        if self.on_click:
-            self.on_click(self.device)
-    
+        if self._user_on_click:
+            self._user_on_click(self.device)
+
     def _handle_refresh(self, e):
-        if self.on_refresh:
-            self.on_refresh(self.device)
+        if self._user_on_refresh:
+            self._user_on_refresh(self.device)
         e.stop_propagation()
     
     def _handle_hover(self, e):
@@ -180,8 +180,8 @@ class AddDeviceCard(ft.Container):
     """
     
     def __init__(self, on_click: Callable = None):
-        self.on_click = on_click
-        
+        self._user_on_click = on_click
+
         content = ft.Column(
             [
                 ft.Text("[+]", size=32),
@@ -192,18 +192,17 @@ class AddDeviceCard(ft.Container):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=8,
         )
-        
+
         super().__init__(
             content=content,
             width=220,
             height=200,
             border_radius=12,
-            border_width=2,
-            border_color=Colors.BORDER,
+            border=ft.Border.all(width=2, color=Colors.BORDER),
             bgcolor=Colors.CARD_BG,
             on_click=self._handle_click,
         )
     
     def _handle_click(self, e):
-        if self.on_click:
-            self.on_click()
+        if self._user_on_click:
+            self._user_on_click()

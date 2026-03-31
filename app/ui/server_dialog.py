@@ -167,7 +167,7 @@ class DeviceDialog(ft.AlertDialog):
                 ft.TextButton(
                     "删除",
                     on_click=self._handle_delete,
-                    style=ft.TextButtonStyle(color=Colors.ERROR),
+                    style=ft.ButtonStyle(color=Colors.ERROR),
                     visible=self.is_edit,
                 ),
                 ft.TextButton(
