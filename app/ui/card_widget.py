@@ -177,35 +177,38 @@ class DeviceCard(ft.Container):
         self.update()
 
 
-class AddDeviceCard(ft.Container):
+class AddDeviceCard(ft.GestureDetector):
     """
-    添加设备卡片
+    添加设备卡片（GestureDetector 包裹 Container，确保点击事件被正确捕获）
     
-    点击创建新设备
+    点击创建新设备。GridView 里的 Container.on_click 在 Flet 0.83
+    有事件穿透问题，改用 GestureDetector + on_tap 解决。
     """
-    
+
     def __init__(self, on_click: Callable = None):
         self._user_on_click = on_click
 
-        content = ft.Column(
-            [
-                ft.Text("[+]", size=32),
-                ft.Text("添加设备", size=14, color=Colors.TEXT_SECONDARY),
-                ft.Text("服务器 / 交换机", size=11, color=Colors.TEXT_DISABLED),
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=8,
-        )
-
-        super().__init__(
-            content=content,
+        content = ft.Container(
+            content=ft.Column(
+                [
+                    ft.Text("[+]", size=32),
+                    ft.Text("添加设备", size=14, color=Colors.TEXT_SECONDARY),
+                    ft.Text("服务器 / 交换机", size=11, color=Colors.TEXT_DISABLED),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=8,
+            ),
             width=220,
             height=200,
             border_radius=12,
             border=ft.Border.all(width=2, color=Colors.BORDER),
             bgcolor=Colors.CARD_BG,
-            on_click=self._handle_click,
+        )
+
+        super().__init__(
+            content=content,
+            on_tap=self._handle_click,
         )
     
     def _handle_click(self, e):
