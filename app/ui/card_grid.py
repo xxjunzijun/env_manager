@@ -7,7 +7,7 @@ app/ui/card_grid.py - 卡片网格布局
 import flet as ft
 from typing import List, Callable
 from app.data.models import Device
-from app.ui.card_widget import DeviceCard, AddDeviceCard
+from app.ui.card_widget import DeviceCard
 from app.ui.styles import Colors
 
 
@@ -68,14 +68,8 @@ class DeviceCardGrid(ft.Container):
             )
             self.grid.controls.append(card)
         
-        # 添加"添加设备"卡片
-        if self.on_add_click:
-            add_card = AddDeviceCard(on_click=self.on_add_click)
-            self.grid.controls.append(add_card)
-        
-        # 注意：_rebuild_grid 不在这里调用 update()
-        # page.add() 后 MainWindow.run() 会统一调 page.update()
-        pass
+        # 注意：添加设备按钮已移至 MainWindow 工具栏（不在 GridView 内）
+        # GridView 在 Flet 0.83 里会拦截子控件的点击事件
 
 
 class DeviceListView(ft.ListView):
@@ -158,23 +152,5 @@ class DeviceListView(ft.ListView):
             )
             self.controls.append(card)
         
-        # 添加设备按钮
-        if self.on_add_click:
-            add_btn = ft.Container(
-                content=ft.Row(
-                    [
-                        ft.Text("[+]", size=24),
-                        ft.Text("添加新设备", size=14),
-                    ],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                ),
-                bgcolor=Colors.CARD_BG,
-                border_radius=8,
-                padding=16,
-                on_click=self.on_add_click,
-            )
-            self.controls.append(add_btn)
-        
-        # 注意：_rebuild_list 不在这里调用 update()
-        # page.add() 后 MainWindow.run() 会统一调 page.update()
-        pass
+        # 注意：添加设备按钮已移至 MainWindow 工具栏（不在 ListView 内）
+        # ListView 在 Flet 0.83 里会拦截子控件的点击事件
