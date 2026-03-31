@@ -73,7 +73,8 @@ class DeviceCardGrid(ft.Container):
             add_card = AddDeviceCard(on_click=self.on_add_click)
             self.grid.controls.append(add_card)
         
-        if hasattr(self, 'update'):
+        # 仅当控件已添加到 page 时才调用 update
+        if getattr(self, 'page', None) is not None:
             self.update()
 
 
@@ -174,5 +175,6 @@ class DeviceListView(ft.ListView):
             )
             self.controls.append(add_btn)
         
-        if hasattr(self, 'update'):
+        # 仅当控件已添加到 page 时才调用 update
+        if getattr(self, 'page', None) is not None:
             self.update()
