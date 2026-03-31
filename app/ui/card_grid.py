@@ -7,7 +7,7 @@ app/ui/card_grid.py - 卡片网格布局
 import flet as ft
 from typing import List, Callable
 from app.data.models import Device
-from app.ui.card_widget import DeviceCard
+from app.ui.card_widget import DeviceCard, AddDeviceCard
 from app.ui.styles import Colors
 
 
@@ -42,8 +42,18 @@ class DeviceCardGrid(ft.Container):
             auto_scroll=True,
         )
         
+        # 添加设备卡片（放在 GridView 上方，作为独立行，不塞进 GridView 内部）
+        self.add_card = AddDeviceCard(on_click=on_add_click) if on_add_click else None
+        
+        # 外层用 Column 包裹，让添加卡片和 GridView 上下排列
+        self.inner = ft.Column(
+            [self.add_card, self.grid] if self.add_card else [self.grid],
+            spacing=0,
+            expand=True,
+        )
+        
         super().__init__(
-            content=self.grid,
+            content=self.inner,
             expand=True,
             bgcolor=Colors.BG,
         )
