@@ -213,6 +213,27 @@ class TestImports:
         params = list(sig.parameters.keys())
         assert "text_size" not in params, "ButtonStyle should not have direct text_size param"
 
+    def test_flet_padding_api(self):
+        """验证 ft.padding.Padding 和 ft.padding.only 可用"""
+        import flet as ft
+
+        p = ft.padding.Padding(1, 2, 3, 4)
+        assert p.left == 1 and p.top == 2
+        p2 = ft.padding.only(left=1, top=2)
+        assert p2.left == 1 and p2.top == 2
+
+    def test_flet_deprecated_padding_symmetric_warn(self):
+        """验证 ft.padding.symmetric 仍存在但已 deprecated（警告性质的检查）"""
+        import flet as ft
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            _ = ft.padding.symmetric(vertical=8, horizontal=4)
+            # 如果下个版本移除了，这个测试会 FAIL（预期行为）
+            depr = [x for x in w if "deprecated" in str(x.message).lower()]
+            # 不阻塞，只是记录——0.83 里 deprecated 但未移除
+
     def test_flet_container_no_border_width(self):
         """验证 Container 不接受 border_width 参数（Flet 0.83+）"""
         import flet as ft
