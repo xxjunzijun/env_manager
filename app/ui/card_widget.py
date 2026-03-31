@@ -9,9 +9,12 @@ import flet as ft
 from typing import Callable, Optional
 from app.data.models import Device
 from app.ui.styles import (
-    Colors, CARD_STYLE, CARD_HOVER_STYLE, 
+    Colors, CARD_STYLE, CARD_HOVER_STYLE,
     get_device_type_color, get_status_color
 )
+from app.utils.logger import get_logger
+
+logger = get_logger("ui.events")
 
 
 class DeviceCard(ft.Container):
@@ -139,10 +142,12 @@ class DeviceCard(ft.Container):
         )
     
     def _handle_click(self, e):
+        logger.debug(f"DeviceCard clicked: {self.device.name}")
         if self._user_on_click:
             self._user_on_click(self.device)
 
     def _handle_refresh(self, e):
+        logger.debug(f"DeviceCard refresh clicked: {self.device.name}")
         if self._user_on_refresh:
             self._user_on_refresh(self.device)
         e.stop_propagation()
@@ -204,5 +209,8 @@ class AddDeviceCard(ft.Container):
         )
     
     def _handle_click(self, e):
+        logger.debug(f"AddDeviceCard clicked, _user_on_click={bool(self._user_on_click)}")
         if self._user_on_click:
             self._user_on_click()
+        else:
+            logger.warning("AddDeviceCard clicked but _user_on_click is None")

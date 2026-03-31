@@ -240,16 +240,19 @@ class MainWindow:
 
     def _on_search(self, e):
         """搜索"""
+        logger.debug(f"搜索事件: e={e}, control={getattr(e, 'control', None)}")
         self._update_device_view()
         self._update_status()
 
     def _on_filter_change(self, e):
         """过滤变更"""
+        logger.debug(f"过滤变更事件: e={e}, control={getattr(e, 'control', None)}")
         self._update_device_view()
         self._update_status()
 
     def _toggle_view(self, e):
         """切换视图"""
+        logger.debug(f"切换视图: _is_grid_view={self._is_grid_view}")
         self._is_grid_view = not self._is_grid_view
         self.view_toggle.icon = (
             ft.icons.Icons.VIEW_LIST if self._is_grid_view else ft.icons.Icons.GRID_VIEW
@@ -259,6 +262,7 @@ class MainWindow:
     def _show_add_dialog(self, e=None):
         """显示添加设备对话框"""
         logger.debug("打开添加设备对话框")
+        logger.debug(f"  page.dialog={self.page.dialog}, page={self.page}")
         dialog = DeviceDialog(
             on_save=self._handle_save_device,
         )
@@ -269,6 +273,7 @@ class MainWindow:
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
         logger.debug(f"打开编辑设备对话框: id={device.id}, name={device.name}")
+        logger.debug(f"  page.dialog={self.page.dialog}, page={self.page}")
         dialog = DeviceDialog(
             device=device,
             on_save=self._handle_save_device,
