@@ -165,6 +165,38 @@ class TestImports:
         assert ssh_manager is not None
         assert ssh_manager.pool is not None
 
+    def test_flet_dropdown_has_on_select(self):
+        """验证 Dropdown 使用 on_select 而非 on_change（0.83+ 兼容性）"""
+        import flet as ft
+        import inspect
+
+        sig = inspect.signature(ft.Dropdown.__init__)
+        params = list(sig.parameters.keys())
+
+        assert "on_select" in params, "Dropdown should have on_select in this Flet version"
+        # 确认旧名称 on_change 已不存在
+        assert "on_change" not in params, "Dropdown should NOT have on_change (renamed to on_select)"
+
+    def test_flet_textfield_has_on_change(self):
+        """验证 TextField 仍使用 on_change（不受影响）"""
+        import flet as ft
+        import inspect
+
+        sig = inspect.signature(ft.TextField.__init__)
+        params = list(sig.parameters.keys())
+
+        assert "on_change" in params, "TextField should have on_change"
+
+    def test_flet_segmented_button_has_on_change(self):
+        """验证 SegmentedButton 使用 on_change（不受影响）"""
+        import flet as ft
+        import inspect
+
+        sig = inspect.signature(ft.SegmentedButton.__init__)
+        params = list(sig.parameters.keys())
+
+        assert "on_change" in params, "SegmentedButton should have on_change"
+
     def test_flet_control_basics(self):
         """验证 flet 基础控件可用"""
         import flet as ft
