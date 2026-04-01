@@ -9,7 +9,9 @@ app/ui/connect_dialog.py - 快速连接对话框
 
 import flet as ft
 import json
+import asyncio
 from typing import Callable
+from concurrent.futures import ThreadPoolExecutor
 from app.data.models import Device
 from app.ui.styles import Colors, BUTTON_STYLE
 from app.core.ssh_manager import ssh_manager
@@ -34,13 +36,52 @@ class ConnectDialog(ft.Container):
     ):
         self._page = page
         self.on_connected = on_connected
+        self._executor = ThreadPoolExecutor(max_workers=1)
 
         # 状态 Refs
         self.status_ref = ft.Ref[ft.Text]()
         self.progress_ref = ft.Ref[ft.ProgressBar]()
         self.connect_btn_ref = ft.Ref[ft.Button]()
 
-        # 设备类型（默认服务器）
+        # ---- 字段定义 ----
+        self.ip_field = ft.TextField(
+            label="IP 地址 / 主机名",
+            hint_text="如: 192.168.1.100",
+            autofocus=True,
+            keyboard_type=ft.KeyboardType.URL,
+            on_submit=lambda e: self._focus_field(self.username_field),
+        )
+        self.port_field = ft.TextField(
+            label="端口",
+            hint_text="默认 22",
+            value="22",
+            keyboard_type=ft.KeyboardType.NUMBER,
+            width=120,
+            on_submit=lambda e: self._focus_field(self.username_field),
+        )
+        self.username_field = ft.TextField(
+            label="用户名",
+            hint_text="root",
+            on_submit=lambda e: self._focus_field(self.password_field),
+        )
+        self.password_field = ft.TextField(
+            label="密码",
+            hint_text="••••••",
+            password=True,
+            can_reveal_password=True,
+            on_submit=lambda e: self._do_connect(),
+        )
+
+        # Tab 焦点顺序（Tab 键 → 跳到下一个字段）
+        self._tab_order = [
+            self.ip_field,
+            self.username_field,
+            self.password_field,
+        ]
+        for i, field in enumerate(self._tab_order[:-1]):
+            field._tab_next = self._tab_order[i + 1]
+
+        # 类型选择器
         self.type_segmented = ft.SegmentedButton(
             segments=[
                 ft.Segment(value="server", label=ft.Text("[SVR] 服务器")),
@@ -49,40 +90,6 @@ class ConnectDialog(ft.Container):
             selected=["server"],
             on_change=self._on_type_change,
         )
-
-        # 连接表单
-        self.ip_field = ft.TextField(
-            label="IP 地址 / 主机名",
-            hint_text="如: 192.168.1.100",
-            autofocus=True,
-            keyboard_type=ft.KeyboardType.URL,
-            on_submit=self._focus_next,
-        )
-        self.port_field = ft.TextField(
-            label="端口",
-            hint_text="默认 22",
-            value="22",
-            keyboard_type=ft.KeyboardType.NUMBER,
-            width=120,
-            on_submit=self._focus_next,
-        )
-        self.username_field = ft.TextField(
-            label="用户名",
-            hint_text="root",
-            on_submit=self._focus_next,
-        )
-        self.password_field = ft.TextField(
-            label="密码",
-            hint_text="••••••",
-            password=True,
-            can_reveal_password=True,
-            on_submit=self._handle_connect,
-        )
-
-        # Tab 键顺序：ip_field → username_field → password_field → 连接按钮
-        self.ip_field.next_field = self.username_field
-        self.port_field.next_field = self.username_field
-        self.username_field.next_field = self.password_field
 
         self.status_text = ft.Text(
             ref=self.status_ref,
@@ -114,7 +121,7 @@ class ConnectDialog(ft.Container):
                 ft.Button(
                     "连接",
                     ref=self.connect_btn_ref,
-                    on_click=self._handle_connect,
+                    on_click=lambda e: self._do_connect(),
                     style=BUTTON_STYLE,
                     icon=ft.icons.Icons.POWER,
                 ),
@@ -172,6 +179,7 @@ class ConnectDialog(ft.Container):
         if self not in self._page.controls:
             self._page.add(self)
         self._page.update()
+        self.ip_field.focus()
         logger.debug("ConnectDialog 已显示")
 
     def hide(self):
@@ -185,12 +193,12 @@ class ConnectDialog(ft.Container):
         self._page.update()
         logger.debug("ConnectDialog 已隐藏并重置")
 
-    def _focus_next(self, e):
-        """Tab 键切换到下一个字段"""
-        next_field = getattr(e.control, "next_field", None)
-        if next_field:
-            next_field.focus()
-            next_field.update()
+    # ---- Tab 键导航 ----
+
+    def _focus_field(self, field: ft.TextField):
+        """切换焦点到指定字段"""
+        field.focus()
+        self._page.update()
 
     # ---- 事件处理 ----
 
@@ -198,10 +206,15 @@ class ConnectDialog(ft.Container):
         self.update()
 
     def _handle_connect(self, e):
-        """连接并保存设备"""
-        import threading
+        self._do_connect()
 
-        # 验证
+    def _handle_cancel(self, e=None):
+        self.hide()
+
+    # ---- 连接核心逻辑 ----
+
+    def _do_connect(self):
+        """点击连接或密码框回车时触发"""
         if not self.ip_field.value.strip():
             self.status_ref.current.value = "请输入 IP 地址"
             self.status_ref.current.color = Colors.ERROR
@@ -213,99 +226,95 @@ class ConnectDialog(ft.Container):
             self.update()
             return
 
-        # 提取 primitives：避免闭包捕获 self
+        # 提取参数
         host = self.ip_field.value.strip()
         port = int(self.port_field.value or 22)
         username = self.username_field.value.strip()
         password = self.password_field.value or ""
         device_type = list(self.type_segmented.selected)[0]
-        status_text = self.status_ref.current
-        progress_bar = self.progress_ref.current
-        connect_btn = self.connect_btn_ref.current
-        page = self._page
-        on_connected = self.on_connected
-        dialog_hide = self.hide
-        dialog_update = self.update
 
+        self.status_ref.current.value = "正在连接..."
+        self.status_ref.current.color = Colors.INFO
+        self.progress_bar.visible = True
+        self.connect_btn_ref.current.disabled = True
+        self.update()
         logger.info(f"连接设备: {username}@{host}:{port}")
 
-        progress_bar.visible = True
-        status_text.value = "正在连接..."
-        status_text.color = Colors.INFO
-        connect_btn.disabled = True
-        dialog_update()
+        # 用 run_task 执行 SSH 线程任务，完成后切回主线程更新 UI
+        self._page.run_task(
+            self._async_connect, host, port, username, password, device_type
+        )
 
-        def do_connect():
-            result = None
-            is_online = False
-            ext_info = "{}"
+    async def _async_connect(self, host: str, port: int, username: str,
+                              password: str, device_type: str):
+        """异步连接任务（SSH 执行在线程池，不阻塞事件循环）"""
+        loop = asyncio.get_event_loop()
 
+        try:
+            is_online, ext_info, result = await loop.run_in_executor(
+                self._executor,
+                self._ssh_connect, host, port, username, password, device_type
+            )
+        except Exception as ex:
+            logger.error(f"连接异常: {host}:{port} - {ex}")
+            self.status_ref.current.value = f"[X] 连接失败: {ex}"
+            self.status_ref.current.color = Colors.ERROR
+            self.progress_bar.visible = False
+            self.connect_btn_ref.current.disabled = False
+            self.update()
+            return
+
+        if is_online and result:
+            self.status_ref.current.value = "[OK] 连接成功！"
+            self.status_ref.current.color = Colors.SUCCESS
+            self.progress_bar.visible = False
+            self.connect_btn_ref.current.disabled = False
+            self.update()
+
+            # 延迟 700ms 关闭，让用户看到成功状态
+            await asyncio.sleep(0.7)
+            self.hide()
+            if self.on_connected:
+                self.on_connected(result)
+        else:
+            msg = result if isinstance(result, str) else "获取设备信息失败"
+            self.status_ref.current.value = f"[X] {msg}"
+            self.status_ref.current.color = Colors.ERROR
+            self.progress_bar.visible = False
+            self.connect_btn_ref.current.disabled = False
+            self.update()
+
+    def _ssh_connect(self, host: str, port: int, username: str,
+                      password: str, device_type: str):
+        """SSH 连接 + 插件数据获取（在线程池中执行）"""
+        conn = ssh_manager.connect(
+            host=host, port=port,
+            username=username,
+            password=password if password else None,
+        )
+        plugins = CardPluginRegistry.get_plugins_for_type(device_type)
+        all_data = {}
+        for plugin in plugins:
             try:
-                conn = ssh_manager.connect(
-                    host=host, port=port,
-                    username=username,
-                    password=password if password else None,
-                )
-                is_online = True
-
-                # 获取设备类型对应的插件信息
-                plugins = CardPluginRegistry.get_plugins_for_type(device_type)
-                all_data = {}
-                for plugin in plugins:
-                    try:
-                        data = plugin.fetch(conn)
-                        all_data.update(data)
-                    except Exception as ex:
-                        logger.error(f"插件 {plugin.info.name} 执行失败: {ex}")
-                ext_info_json = json.dumps(all_data)
-                conn.close()
-
-                # 优先用 hostname，否则用 IP
-                name = (all_data.get("hostname")
-                        or all_data.get("sysname")
-                        or host)
-
-                result = Device(
-                    name=name,
-                    device_type=device_type,
-                    ip_address=host,
-                    port=port,
-                    username=username,
-                    password=password if password else None,
-                    is_online=is_online,
-                    ext_info=ext_info_json,
-                )
-
-                def on_success():
-                    status_text.value = "[OK] 连接成功！"
-                    status_text.color = Colors.SUCCESS
-                    connect_btn.disabled = False
-                    progress_bar.visible = False
-                    dialog_update()
-                    # 延迟关闭，给用户看到成功提示
-                    self._page.loop.call_later(700, lambda _: (
-                        dialog_hide(),
-                        on_connected(result) if on_connected else None
-                    ))
-
-                self._page.loop.call_later(0, on_success)
-
+                data = plugin.fetch(conn)
+                all_data.update(data)
             except Exception as ex:
-                logger.error(f"连接失败: {host}:{port} - {ex}")
+                logger.error(f"插件 {plugin.info.name} 执行失败: {ex}")
+        ext_info_json = json.dumps(all_data)
+        conn.close()
 
-                def on_fail():
-                    status_text.value = f"[X] 连接失败: {ex}"
-                    status_text.color = Colors.ERROR
-                    connect_btn.disabled = False
-                    progress_bar.visible = False
-                    dialog_update()
+        name = (all_data.get("hostname")
+                or all_data.get("sysname")
+                or host)
 
-                self._page.loop.call_later(0, on_fail)
-
-        threading.Thread(target=do_connect, daemon=True).start()
-
-    def _handle_cancel(self, e=None):
-        self.hide()
-
-
-
+        result = Device(
+            name=name,
+            device_type=device_type,
+            ip_address=host,
+            port=port,
+            username=username,
+            password=password if password else None,
+            is_online=True,
+            ext_info=ext_info_json,
+        )
+        return (True, ext_info_json, result)
