@@ -56,6 +56,7 @@ class ConnectDialog(ft.Container):
             hint_text="如: 192.168.1.100",
             autofocus=True,
             keyboard_type=ft.KeyboardType.URL,
+            on_submit=self._focus_next,
         )
         self.port_field = ft.TextField(
             label="端口",
@@ -63,17 +64,25 @@ class ConnectDialog(ft.Container):
             value="22",
             keyboard_type=ft.KeyboardType.NUMBER,
             width=120,
+            on_submit=self._focus_next,
         )
         self.username_field = ft.TextField(
             label="用户名",
             hint_text="root",
+            on_submit=self._focus_next,
         )
         self.password_field = ft.TextField(
             label="密码",
             hint_text="••••••",
             password=True,
             can_reveal_password=True,
+            on_submit=self._handle_connect,
         )
+
+        # Tab 键顺序：ip_field → username_field → password_field → 连接按钮
+        self.ip_field.next_field = self.username_field
+        self.port_field.next_field = self.username_field
+        self.username_field.next_field = self.password_field
 
         self.status_text = ft.Text(
             ref=self.status_ref,
@@ -176,6 +185,13 @@ class ConnectDialog(ft.Container):
         self._page.update()
         logger.debug("ConnectDialog 已隐藏并重置")
 
+    def _focus_next(self, e):
+        """Tab 键切换到下一个字段"""
+        next_field = getattr(e.control, "next_field", None)
+        if next_field:
+            next_field.focus()
+            next_field.update()
+
     # ---- 事件处理 ----
 
     def _on_type_change(self, e):
@@ -267,12 +283,12 @@ class ConnectDialog(ft.Container):
                     progress_bar.visible = False
                     dialog_update()
                     # 延迟关闭，给用户看到成功提示
-                    page.call_later(700, lambda _: (
+                    self._page.loop.call_later(700, lambda _: (
                         dialog_hide(),
                         on_connected(result) if on_connected else None
                     ))
 
-                page.call_later(0, on_success)
+                self._page.loop.call_later(0, on_success)
 
             except Exception as ex:
                 logger.error(f"连接失败: {host}:{port} - {ex}")
@@ -284,7 +300,7 @@ class ConnectDialog(ft.Container):
                     progress_bar.visible = False
                     dialog_update()
 
-                page.call_later(0, on_fail)
+                self._page.loop.call_later(0, on_fail)
 
         threading.Thread(target=do_connect, daemon=True).start()
 

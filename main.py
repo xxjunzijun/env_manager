@@ -92,7 +92,7 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
         def show_dialog():
             show_error_dialog(_main_page, title, message, tb_short)
         
-        _main_page.call_later(0, show_dialog)
+        _main_page.loop.call_later(0, show_dialog)
 
 
 def main(page: ft.Page):

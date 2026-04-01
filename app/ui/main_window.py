@@ -464,7 +464,7 @@ class MainWindow:
                         ft.SnackBar(content=ft.Text(f"{device_name} 刷新成功"))
                     )
 
-                self.page.call_later(0, update_ui)
+                self.page.loop.call_later(0, update_ui)
                 logger.info(f"设备刷新成功: {device_name}")
 
             except Exception as e:
@@ -479,6 +479,6 @@ class MainWindow:
                         ft.SnackBar(content=ft.Text(f"{device_name} 刷新失败: {e}"))
                     )
 
-                self.page.call_later(0, update_ui)
+                self.page.loop.call_later(0, update_ui)
 
         threading.Thread(target=do_refresh, daemon=True).start()

@@ -223,7 +223,7 @@ class DeviceDialogModal(ft.Container):
 
         # 提取 bound method 避免闭包捕获 self（含 SegmentedButton.selected set）
         dialog_update = self.update
-        page_call_later = self._page.call_later
+        page_call_later = self._page.loop.call_later
 
         def test():
             try:
