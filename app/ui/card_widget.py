@@ -144,7 +144,7 @@ class DeviceCard(ft.Container):
                             bgcolor=Colors.PRIMARY_LIGHT,
                             padding=ft.padding.Padding(4, 4, 4, 4),
                             border_radius=ft.border_radius.only(
-                                topLeft=12, topRight=12,
+                                top_left=12, top_right=12,
                             ),
                         ),
                         ft.Container(
