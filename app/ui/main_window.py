@@ -130,6 +130,10 @@ class MainWindow:
             on_add_click=self._show_add_dialog,
         )
 
+        # 对话框引用（复用同一个实例，通过 show/hide 控制）
+        self._add_dialog: DeviceDialog = None
+        self._edit_dialog: DeviceDialog = None
+
         # 状态栏
         self.status_bar = ft.Container(
             content=ft.Row(
@@ -263,33 +267,31 @@ class MainWindow:
         """显示添加设备对话框"""
         logger.debug("打开添加设备对话框")
         try:
-            dialog = DeviceDialog(
-                on_save=self._handle_save_device,
-            )
-            logger.debug("DeviceDialog 实例创建成功")
+            if self._add_dialog is None:
+                self._add_dialog = DeviceDialog(
+                    page=self.page,
+                    on_save=self._handle_save_device,
+                )
+                logger.debug("DeviceDialog (add) 实例创建成功")
+            self._add_dialog.show()
+            logger.debug("添加设备对话框已显示")
         except Exception as ex:
-            logger.error(f"DeviceDialog 创建失败: {ex}", exc_info=True)
-            return
-
-        try:
-            self.page.dialog = dialog
-            dialog.open = True
-            self.page.update()
-            logger.debug(f"对话框已显示, dialog.open={dialog.open}")
-        except Exception as ex:
-            logger.error(f"对话框显示失败: {ex}", exc_info=True)
+            logger.error(f"显示添加对话框失败: {ex}", exc_info=True)
 
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
         logger.debug(f"打开编辑设备对话框: id={device.id}, name={device.name}")
-        dialog = DeviceDialog(
-            device=device,
-            on_save=self._handle_save_device,
-            on_delete=self._handle_delete_device,
-        )
-        self.page.dialog = dialog
-        dialog.open = True
-        self.page.update()
+        try:
+            self._edit_dialog = DeviceDialog(
+                page=self.page,
+                device=device,
+                on_save=self._handle_save_device,
+                on_delete=self._handle_delete_device,
+            )
+            self._edit_dialog.show()
+            logger.debug("编辑设备对话框已显示")
+        except Exception as ex:
+            logger.error(f"显示编辑对话框失败: {ex}", exc_info=True)
 
     def _handle_save_device(self, device: Device):
         """保存设备"""
