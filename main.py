@@ -25,7 +25,7 @@ def show_error_dialog(page: ft.Page, title: str, message: str, details: str = No
         details: 详细错误信息（可选）
     """
     content = ft.Column([
-        ft.Text(title, size=18, weight=ft.FontWeight.BOLD, color=ft.colors.RED),
+        ft.Text(title, size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.RED),
         ft.Container(height=10),
         ft.Text(message, size=14),
     ], scroll="auto")
@@ -35,17 +35,17 @@ def show_error_dialog(page: ft.Page, title: str, message: str, details: str = No
         content.controls.append(
             ft.Container(
                 content=ft.Text(details, size=11, font_family="monospace"),
-                bgcolor=ft.colors.with_opacity(ft.colors.GREY_200, 0.3),
+                bgcolor=ft.Colors.with_opacity(0.3, ft.Colors.GREY_200),
                 padding=10,
                 border_radius=5,
-                max_height=200,
+                height=200,
             )
         )
     
     # 添加日志路径提示
     content.controls.append(ft.Container(height=10))
     content.controls.append(
-        ft.Text(f"日志文件: {get_log_dir()}", size=11, color=ft.colors.GREY_600)
+        ft.Text(f"日志文件: {get_log_dir()}", size=11, color=ft.Colors.GREY_600)
     )
     
     def close_and_exit(e):

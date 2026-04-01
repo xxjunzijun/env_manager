@@ -118,7 +118,7 @@ class MainWindow:
                 spacing=8,
             ),
             bgcolor=Colors.CARD_BG,
-            padding=ft.padding.Padding(12, 8, 12, 8),
+            padding=ft.Padding(12, 8, 12, 8),
             border=ft.border.Border(
                 bottom=ft.border.BorderSide(1, Colors.BORDER)
             ),
@@ -154,7 +154,7 @@ class MainWindow:
                 ],
             ),
             bgcolor=Colors.CARD_BG,
-            padding=ft.padding.Padding(12, 8, 12, 8),
+            padding=ft.Padding(12, 8, 12, 8),
             border=ft.border.Border(
                 top=ft.border.BorderSide(1, Colors.BORDER)
             ),

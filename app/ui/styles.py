@@ -62,7 +62,7 @@ BUTTON_STYLE = ft.ButtonStyle(
     bgcolor=Colors.PRIMARY,
     color="white",
     shape=ft.RoundedRectangleBorder(radius=8),
-    padding=ft.padding.Padding(16, 8, 16, 8),
+    padding=ft.Padding(16, 8, 16, 8),
 )
 
 

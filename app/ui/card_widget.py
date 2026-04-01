@@ -50,7 +50,7 @@ def _build_card_content(device: Device, on_refresh, on_edit):
                         content=ft.Text(status_text, size=10, color=status_color),
                         bgcolor=f"{status_color}20",
                         border_radius=4,
-                        padding=ft.padding.Padding(4, 2, 4, 2),
+                        padding=ft.Padding(4, 2, 4, 2),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.START,
@@ -142,7 +142,7 @@ class DeviceCard(ft.Container):
                                 ],
                             ),
                             bgcolor=Colors.PRIMARY_LIGHT,
-                            padding=ft.padding.Padding(4, 4, 4, 4),
+                            padding=ft.Padding(4, 4, 4, 4),
                             border_radius=ft.BorderRadius.only(
                                 top_left=12, top_right=12,
                             ),
