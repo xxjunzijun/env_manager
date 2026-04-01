@@ -221,6 +221,10 @@ class DeviceDialogModal(ft.Container):
         save_btn.disabled = True
         self.update()
 
+        # 提取 bound method 避免闭包捕获 self（含 SegmentedButton.selected set）
+        dialog_update = self.update
+        page_call_later = self._page.call_later
+
         def test():
             try:
                 success, message = ssh_manager.test_connection(
@@ -237,17 +241,17 @@ class DeviceDialogModal(ft.Container):
                         result_text.value = f"[X] {message}"
                         result_text.color = Colors.ERROR
                     save_btn.disabled = False
-                    self.update()
+                    dialog_update()
 
-                self._page.call_later(0, update_ui)
+                page_call_later(0, update_ui)
             except Exception as ex:
                 def update_ui():
                     progress_bar.visible = False
                     result_text.value = f"[X] 测试失败: {str(ex)}"
                     result_text.color = Colors.ERROR
                     save_btn.disabled = False
-                    self.update()
-                self._page.call_later(0, update_ui)
+                    dialog_update()
+                page_call_later(0, update_ui)
 
         threading.Thread(target=test, daemon=True).start()
 

@@ -17,13 +17,97 @@ from app.utils.logger import get_logger
 logger = get_logger("ui.events")
 
 
+def _build_card_content(device: Device, on_refresh, on_edit):
+    """构建设备卡片内容"""
+    type_icons = {"server": "[SVR]", "switch": "[SW]"}
+    icon = type_icons.get(device.device_type, "[DEV]")
+    status_color = get_status_color(device.is_online)
+    status_text = "在线" if device.is_online else "离线"
+
+    content = ft.Column(
+        [
+            ft.Row(
+                [
+                    ft.Text(icon, size=24),
+                    ft.Column(
+                        [
+                            ft.Text(
+                                device.name,
+                                size=14,
+                                weight=ft.FontWeight.W_600,
+                                overflow=ft.TextOverflow.ELLIPSIS,
+                            ),
+                            ft.Text(
+                                device.display_type,
+                                size=11,
+                                color=Colors.TEXT_SECONDARY,
+                            ),
+                        ],
+                        expand=True,
+                        spacing=0,
+                    ),
+                    ft.Container(
+                        content=ft.Text(status_text, size=10, color=status_color),
+                        bgcolor=f"{status_color}20",
+                        border_radius=4,
+                        padding=ft.padding.Padding(4, 2, 4, 2),
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.START,
+            ),
+            ft.Divider(height=8, color=Colors.BORDER),
+            ft.Row(
+                [
+                    ft.Text("📍", size=12),
+                    ft.Text(
+                        f"{device.ip_address}:{device.port}",
+                        size=12,
+                        color=Colors.TEXT_SECONDARY,
+                    ),
+                ],
+            ),
+            ft.Text(
+                f"用户: {device.username}",
+                size=11,
+                color=Colors.TEXT_SECONDARY,
+            ),
+            ft.Container(expand=True),
+            ft.Row(
+                [
+                    ft.TextButton(
+                        "刷新",
+                        icon="refresh",
+                        on_click=on_refresh,
+                        style=ft.ButtonStyle(
+                            icon_size=14,
+                            text_style=ft.TextStyle(size=12),
+                        ),
+                    ),
+                    ft.TextButton(
+                        "编辑",
+                        icon="edit",
+                        on_click=on_edit,
+                        style=ft.ButtonStyle(
+                            icon_size=14,
+                            text_style=ft.TextStyle(size=12),
+                        ),
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.END,
+            ),
+        ],
+        spacing=4,
+    )
+    return content
+
+
 class DeviceCard(ft.Container):
     """
     设备卡片组件
-    
+
     显示设备信息，支持点击编辑
     """
-    
+
     def __init__(
         self,
         device: Device,
@@ -35,111 +119,87 @@ class DeviceCard(ft.Container):
         self._user_on_click = on_click
         self._user_on_refresh = on_refresh
         self._hovered = False
-        
-        # 设备类型图标
-        type_icons = {"server": "[SVR]", "switch": "[SW]"}
-        icon = type_icons.get(device.device_type, "[DEV]")
-        
-        # 状态指示器
-        status_color = get_status_color(device.is_online)
-        status_text = "在线" if device.is_online else "离线"
-        
-        # 创建卡片内容
-        content = ft.Column(
-            [
-                # 头部：图标 + 名称 + 状态
-                ft.Row(
+
+        content = _build_card_content(device, self._handle_refresh, self._handle_click)
+
+        # Demo 设备特殊样式
+        if device.is_demo:
+            style = dict(CARD_STYLE)
+            style["border"] = ft.Border.all(
+                width=2,
+                color=Colors.PRIMARY,
+            )
+            super().__init__(
+                content=ft.Column(
                     [
-                        ft.Text(icon, size=24),
-                        ft.Column(
-                            [
-                                ft.Text(
-                                    device.name,
-                                    size=14,
-                                    weight=ft.FontWeight.W_600,
-                                    overflow=ft.TextOverflow.ELLIPSIS,
-                                ),
-                                ft.Text(
-                                    device.display_type,
-                                    size=11,
-                                    color=Colors.TEXT_SECONDARY,
-                                ),
-                            ],
-                            expand=True,
-                            spacing=0,
-                        ),
-                        # 状态指示点
                         ft.Container(
-                            content=ft.Text(status_text, size=10, color=status_color),
-                            bgcolor=f"{status_color}20",
-                            border_radius=4,
-                            padding=ft.padding.Padding(4, 2, 4, 2),
-                        ),
-                    ],
-                    alignment=ft.MainAxisAlignment.START,
-                ),
-                
-                ft.Divider(height=8, color=Colors.BORDER),
-                
-                # IP 和端口
-                ft.Row(
-                    [
-                        ft.Text("📍", size=12),
-                        ft.Text(
-                            f"{device.ip_address}:{device.port}",
-                            size=12,
-                            color=Colors.TEXT_SECONDARY,
-                        ),
-                    ],
-                ),
-                
-                ft.Text(
-                    f"用户: {device.username}",
-                    size=11,
-                    color=Colors.TEXT_SECONDARY,
-                ),
-                
-                # 扩展信息区域（动态内容）
-                ft.Container(
-                    content=ft.Column([], spacing=2),
-                    expand=True,
-                    alignment=ft.alignment.Alignment.TOP_LEFT,
-                ),
-                
-                # 底部操作按钮
-                ft.Row(
-                    [
-                        ft.TextButton(
-                            "刷新",
-                            icon="refresh",
-                            on_click=self._handle_refresh,
-                            style=ft.ButtonStyle(
-                                icon_size=14,
-                                text_style=ft.TextStyle(size=12),
+                            content=ft.Row(
+                                [
+                                    ft.Text("[示例]", size=11,
+                                            color=Colors.PRIMARY,
+                                            weight=ft.FontWeight.BOLD),
+                                    ft.Container(expand=True),
+                                ],
+                            ),
+                            bgcolor=Colors.PRIMARY_LIGHT,
+                            padding=ft.padding.Padding(4, 4, 4, 4),
+                            border_radius=ft.border_radius.only(
+                                topLeft=12, topRight=12,
                             ),
                         ),
-                        ft.TextButton(
-                            "编辑",
-                            icon="edit",
-                            on_click=self._handle_click,
-                            style=ft.ButtonStyle(
-                                icon_size=14,
-                                text_style=ft.TextStyle(size=12),
-                            ),
+                        ft.Container(
+                            content=content,
+                            padding=12,
                         ),
                     ],
-                    alignment=ft.MainAxisAlignment.END,
+                    spacing=0,
                 ),
-            ],
-            spacing=4,
-        )
-        
-        super().__init__(
-            content=content,
-            **CARD_STYLE,
-            on_click=self._handle_click,
-            on_hover=self._handle_hover,
-        )
+                **style,
+                on_click=self._handle_click,
+                on_hover=self._handle_hover,
+            )
+        else:
+            super().__init__(
+                content=content,
+                **CARD_STYLE,
+                on_click=self._handle_click,
+                on_hover=self._handle_hover,
+            )
+
+    def _handle_click(self, e):
+        logger.debug(f"DeviceCard clicked: {self.device.name}")
+        if self._user_on_click:
+            self._user_on_click(self.device)
+
+    def _handle_refresh(self, e):
+        logger.debug(f"DeviceCard refresh clicked: {self.device.name}")
+        if self._user_on_refresh:
+            self._user_on_refresh(self.device)
+        e.stop_propagation()
+
+    def _handle_hover(self, e):
+        self._hovered = e.data == "true"
+        if self._hovered:
+            self.border_color = Colors.PRIMARY
+            self.shadow = ft.BoxShadow(
+                spread_radius=2,
+                blur_radius=8,
+                color="#2196F320",
+            )
+        else:
+            self.border_color = Colors.BORDER
+            self.shadow = ft.BoxShadow(
+                spread_radius=1,
+                blur_radius=4,
+                color="#00000010",
+            )
+        self.update()
+
+    def update_device(self, device: Device):
+        """更新设备信息"""
+        self.device = device
+        self.update()
+
     
     def _handle_click(self, e):
         logger.debug(f"DeviceCard clicked: {self.device.name}")

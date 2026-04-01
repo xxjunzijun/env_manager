@@ -5,12 +5,14 @@ app/ui/main_window.py - 主窗口
 """
 
 import flet as ft
+import json
 from typing import List
 from app.data.models import Device
 from app.data.database import DeviceDB
 from app.ui.card_widget import DeviceCard, AddDeviceCard
 from app.ui.card_grid import DeviceCardGrid, DeviceListView
 from app.ui.server_dialog import DeviceDialog
+from app.ui.connect_dialog import ConnectDialog
 from app.ui.styles import Colors
 from app.core.card_plugin import CardPluginRegistry
 from app.core.ssh_manager import ssh_manager
@@ -130,8 +132,8 @@ class MainWindow:
             on_add_click=self._show_add_dialog,
         )
 
-        # 对话框引用（复用同一个实例，通过 show/hide 控制）
-        self._add_dialog: DeviceDialog = None
+        # 对话框引用（ConnectDialog 用于添加，DeviceDialog 用于编辑）
+        self._add_dialog: ConnectDialog = None
         self._edit_dialog: DeviceDialog = None
 
         # 状态栏
@@ -178,9 +180,45 @@ class MainWindow:
     def _load_devices(self):
         """加载设备列表"""
         self.devices = self.db.get_all_devices()
+
+        # 如果数据库为空，插入示例设备
+        if not self.devices:
+            self._ensure_demo_device()
+            self.devices = self.db.get_all_devices()
+
         self._update_group_filter()
         self._update_device_view()
         self._update_status()
+
+    def _ensure_demo_device(self):
+        """确保存在一个示例设备"""
+        import json
+        demo_data = json.dumps({
+            "hostname": "demo-server-01",
+            "sysname": "Linux",
+            "os": "Ubuntu 22.04 LTS",
+            "cpu_count": "4",
+            "memory_total": "8 GB",
+        })
+        demo = Device(
+            name="Demo 服务器",
+            device_type="server",
+            ip_address="192.168.1.100",
+            port=22,
+            username="root",
+            password="demo",
+            group="示例环境",
+            tags="示例,演示",
+            description="这是示例设备，仅供演示",
+            is_online=True,
+            ext_info=demo_data,
+            is_demo=True,
+        )
+        try:
+            self.db.add_device(demo)
+            logger.info("示例设备已创建")
+        except Exception as e:
+            logger.error(f"创建示例设备失败: {e}")
 
     def _update_device_view(self):
         """更新设备视图"""
@@ -257,23 +295,46 @@ class MainWindow:
         self._update_device_view()
 
     def _show_add_dialog(self, e=None):
-        """显示添加设备对话框"""
+        """显示添加设备对话框（快速连接流程）"""
         logger.debug("打开添加设备对话框")
         try:
             if self._add_dialog is None:
-                self._add_dialog = DeviceDialog(
+                self._add_dialog = ConnectDialog(
                     page=self.page,
-                    on_save=self._handle_save_device,
+                    on_connected=self._handle_new_device_connected,
                 )
-                logger.debug("DeviceDialog (add) 实例创建成功")
+                logger.debug("ConnectDialog 实例创建成功")
             self._add_dialog.show()
             logger.debug("添加设备对话框已显示")
         except Exception as ex:
             logger.error(f"显示添加对话框失败: {ex}", exc_info=True)
 
+    def _handle_new_device_connected(self, device: Device):
+        """新设备连接成功后保存"""
+        logger.info(f"新设备连接成功: name={device.name}, ip={device.ip_address}")
+        try:
+            device_id = self.db.add_device(device)
+            device.id = device_id
+            logger.info(f"设备添加完成: id={device_id}, name={device.name}")
+            self._load_devices()
+            self.page.show_snack_bar(
+                ft.SnackBar(content=ft.Text(f"{device.name} 添加成功"))
+            )
+        except Exception as e:
+            logger.error(f"保存新设备异常: {e}")
+            self.page.show_snack_bar(
+                ft.SnackBar(content=ft.Text(f"添加失败: {e}"))
+            )
+
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
         logger.debug(f"打开编辑设备对话框: id={device.id}, name={device.name}")
+        # 示例设备不允许编辑
+        if device.is_demo:
+            self.page.show_snack_bar(
+                ft.SnackBar(content=ft.Text("这是示例设备，无法编辑"))
+            )
+            return
         try:
             self._edit_dialog = DeviceDialog(
                 page=self.page,
@@ -321,9 +382,16 @@ class MainWindow:
             )
 
     def _handle_delete_device(self, device_id: int):
-        """删除设备"""
+        """删除设备（示例设备不允许删除）"""
         logger.info(f"删除设备: id={device_id}")
         try:
+            # 禁止删除示例设备
+            device = self.db.get_device(device_id)
+            if device and device.is_demo:
+                self.page.show_snack_bar(
+                    ft.SnackBar(content=ft.Text("示例设备无法删除"))
+                )
+                return
             self.db.delete_device(device_id)
             logger.info(f"设备删除完成: id={device_id}")
             self._load_devices()

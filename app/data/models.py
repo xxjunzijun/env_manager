@@ -46,7 +46,10 @@ class Device(SQLModel, table=True):
     
     # 扩展信息 (JSON 格式存储)
     ext_info: Optional[str] = Field(default="{}", description="扩展信息 JSON")
-    
+
+    # 是否为示例设备（示例卡片，不可删除）
+    is_demo: bool = Field(default=False, description="是否为示例设备")
+
     # 时间戳
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
