@@ -38,7 +38,7 @@ class ConnectDialog(ft.Container):
         # 状态 Refs
         self.status_ref = ft.Ref[ft.Text]()
         self.progress_ref = ft.Ref[ft.ProgressBar]()
-        self.connect_btn_ref = ft.Ref[ft.ElevatedButton]()
+        self.connect_btn_ref = ft.Ref[ft.Button]()
 
         # 设备类型（默认服务器）
         self.type_segmented = ft.SegmentedButton(
@@ -102,7 +102,7 @@ class ConnectDialog(ft.Container):
             [
                 ft.TextButton("取消", on_click=self._handle_cancel),
                 ft.Container(expand=True),
-                ft.ElevatedButton(
+                ft.Button(
                     "连接",
                     ref=self.connect_btn_ref,
                     on_click=self._handle_connect,

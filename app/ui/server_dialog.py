@@ -43,7 +43,7 @@ class DeviceDialogModal(ft.Container):
         # 状态 Refs
         self.test_result_ref = ft.Ref[ft.Text]()
         self.test_progress_ref = ft.Ref[ft.ProgressBar]()
-        self.save_btn_ref = ft.Ref[ft.ElevatedButton]()
+        self.save_btn_ref = ft.Ref[ft.Button]()
 
         # ---- 表单内容 ----
         title_text = "[EDIT] 编辑设备" if self.is_edit else "[+] 添加设备"
@@ -127,7 +127,7 @@ class DeviceDialogModal(ft.Container):
                 ft.Container(expand=True),
                 ft.TextButton("取消", on_click=self._handle_cancel),
                 ft.TextButton("测试连接", on_click=self._handle_test),
-                ft.ElevatedButton("保存", ref=self.save_btn_ref,
+                ft.Button("保存", ref=self.save_btn_ref,
                                   on_click=self._handle_save, style=BUTTON_STYLE),
             ],
             alignment=ft.MainAxisAlignment.END,
