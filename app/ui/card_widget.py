@@ -10,7 +10,7 @@ from typing import Callable, Optional
 from app.data.models import Device
 from app.ui.styles import (
     Colors, CARD_STYLE, CARD_HOVER_STYLE,
-    get_device_type_color, get_status_color
+    get_status_color
 )
 from app.utils.logger import get_logger
 

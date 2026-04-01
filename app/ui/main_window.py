@@ -148,7 +148,6 @@ class MainWindow:
                         "0 台设备",
                         size=12,
                         color=Colors.TEXT_SECONDARY,
-                        ref=self._device_count_ref() if hasattr(self, '_device_count_ref') else None,
                     ),
                 ],
             ),
@@ -171,12 +170,6 @@ class MainWindow:
                 spacing=0,
             )
         )
-
-    def _device_count_ref(self):
-        """设备计数引用"""
-        if not hasattr(self, '_device_count_text'):
-            self._device_count_text = ft.Ref[ft.Text]()
-        return self._device_count_text
 
     def run(self):
         """运行应用"""
@@ -346,23 +339,32 @@ class MainWindow:
         import json
         from datetime import datetime
 
-        logger.info(f"刷新设备任务启动: id={device.id}, name={device.name}, ip={device.ip_address}")
+        # 提取 primitives：避免闭包捕获 self（含 Flet 控件）进 call_later
+        device_id = device.id
+        device_name = device.name
+        host = device.ip_address
+        port = device.port
+        username = device.username
+        password = device.password
+        ssh_key_path = device.ssh_key_path
+        device_type = device.device_type
+
+        logger.info(f"刷新设备任务启动: id={device_id}, name={device_name}, ip={host}")
 
         def do_refresh():
             try:
-                logger.debug(f"开始 SSH 连接: {device.ip_address}:{device.port}")
+                logger.debug(f"开始 SSH 连接: {host}:{port}")
 
                 # 获取 SSH 连接
                 conn = ssh_manager.connect(
-                    host=device.ip_address,
-                    port=device.port,
-                    username=device.username,
-                    password=device.password,
-                    ssh_key_path=device.ssh_key_path,
+                    host=host, port=port,
+                    username=username,
+                    password=password,
+                    ssh_key_path=ssh_key_path,
                 )
 
                 # 获取该设备类型对应的插件
-                plugins = CardPluginRegistry.get_plugins_for_type(device.device_type)
+                plugins = CardPluginRegistry.get_plugins_for_type(device_type)
                 logger.debug(f"找到 {len(plugins)} 个插件: {[p.info.name for p in plugins]}")
 
                 # 合并所有插件数据
@@ -381,32 +383,32 @@ class MainWindow:
 
                 # 更新数据库
                 self.db.update_device(
-                    device.id,
+                    device_id,
                     is_online=True,
                     last_check=datetime.now(),
                     ext_info=json.dumps(all_data),
                 )
 
-                # 更新 UI - 使用 call_later 从线程安全更新
+                # 更新 UI - 从线程安全调用
                 def update_ui():
                     self._load_devices()
                     self.page.show_snack_bar(
-                        ft.SnackBar(content=ft.Text(f"{device.name} 刷新成功"))
+                        ft.SnackBar(content=ft.Text(f"{device_name} 刷新成功"))
                     )
 
                 self.page.call_later(0, update_ui)
-                logger.info(f"设备刷新成功: {device.name}")
+                logger.info(f"设备刷新成功: {device_name}")
 
             except Exception as e:
-                logger.error(f"刷新设备失败: id={device.id}, name={device.name}, error={e}")
+                logger.error(f"刷新设备失败: id={device_id}, name={device_name}, error={e}")
 
                 # 更新离线状态
-                self.db.update_device(device.id, is_online=False)
+                self.db.update_device(device_id, is_online=False)
 
                 def update_ui():
                     self._load_devices()
                     self.page.show_snack_bar(
-                        ft.SnackBar(content=ft.Text(f"{device.name} 刷新失败: {e}"))
+                        ft.SnackBar(content=ft.Text(f"{device_name} 刷新失败: {e}"))
                     )
 
                 self.page.call_later(0, update_ui)
