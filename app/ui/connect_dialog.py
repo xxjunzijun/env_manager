@@ -46,7 +46,7 @@ class ConnectDialog(ft.Container):
                 ft.Segment(value="server", label=ft.Text("[SVR] 服务器")),
                 ft.Segment(value="switch", label=ft.Text("[SW] 交换机")),
             ],
-            selected={"server"},
+            selected=["server"],
             on_change=self._on_type_change,
         )
 

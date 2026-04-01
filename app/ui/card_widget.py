@@ -200,42 +200,6 @@ class DeviceCard(ft.Container):
         self.device = device
         self.update()
 
-    
-    def _handle_click(self, e):
-        logger.debug(f"DeviceCard clicked: {self.device.name}")
-        if self._user_on_click:
-            self._user_on_click(self.device)
-
-    def _handle_refresh(self, e):
-        logger.debug(f"DeviceCard refresh clicked: {self.device.name}")
-        if self._user_on_refresh:
-            self._user_on_refresh(self.device)
-        e.stop_propagation()
-    
-    def _handle_hover(self, e):
-        self._hovered = e.data == "true"
-        if self._hovered:
-            self.border_color = Colors.PRIMARY
-            self.shadow = ft.BoxShadow(
-                spread_radius=2,
-                blur_radius=8,
-                color="#2196F320",
-            )
-        else:
-            self.border_color = Colors.BORDER
-            self.shadow = ft.BoxShadow(
-                spread_radius=1,
-                blur_radius=4,
-                color="#00000010",
-            )
-        self.update()
-    
-    def update_device(self, device: Device):
-        """更新设备信息"""
-        self.device = device
-        # 重新渲染卡片
-        self.update()
-
 
 class AddDeviceCard(ft.Container):
     """
