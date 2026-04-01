@@ -48,7 +48,7 @@ def _build_card_content(device: Device, on_refresh, on_edit):
                     ),
                     ft.Container(
                         content=ft.Text(status_text, size=10, color=status_color),
-                        bgcolor=f"{status_color}20",
+                        bgcolor=Colors.with_opacity(status_color, 0.12),
                         border_radius=4,
                         padding=ft.Padding(4, 2, 4, 2),
                     ),

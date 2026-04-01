@@ -87,7 +87,7 @@ class ConnectDialog(ft.Container):
                 ft.Segment(value="server", label=ft.Text("[SVR] 服务器")),
                 ft.Segment(value="switch", label=ft.Text("[SW] 交换机")),
             ],
-            selected=["server"],
+            selected=set(["server"]),
             on_change=self._on_type_change,
         )
 
@@ -123,7 +123,7 @@ class ConnectDialog(ft.Container):
                     ref=self.connect_btn_ref,
                     on_click=lambda e: self._do_connect(),
                     style=BUTTON_STYLE,
-                    icon=ft.icons.Icons.POWER,
+                    icon=ft.icons.Icons.POWER_SETTINGS,
                 ),
             ],
             alignment=ft.MainAxisAlignment.END,
@@ -291,6 +291,7 @@ class ConnectDialog(ft.Container):
             host=host, port=port,
             username=username,
             password=password if password else None,
+            ssh_key_path=None,
         )
         plugins = CardPluginRegistry.get_plugins_for_type(device_type)
         all_data = {}

@@ -53,15 +53,10 @@ class MainWindow:
         self.page.window_height = 800
         self.page.padding = 0
         logger.debug("页面属性设置完成: title=Server Manager, size=1200x800")
-        self.page.styles = {
-            "AppBar": {
-                "bgcolor": Colors.PRIMARY,
-                "color": "white",
-            },
-            "Card": {
-                "bgcolor": Colors.CARD_BG,
-            },
-        }
+        self.page.theme = ft.PageTheme(
+            bgcolor=Colors.PRIMARY,
+            color_scheme_seed=Colors.PRIMARY,
+        )
 
     def _setup_ui(self):
         """设置 UI"""

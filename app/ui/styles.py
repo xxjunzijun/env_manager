@@ -32,6 +32,15 @@ class Colors:
     BORDER = "#E0E0E0"
     BORDER_HOVER = "#9E9E9E"
 
+    @staticmethod
+    def with_opacity(hex_color: str, opacity: float) -> str:
+        """将 hex 颜色转为带透明度的 rgba 字符串"""
+        hex_color = hex_color.lstrip("#")
+        if len(hex_color) == 6:
+            r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+            return f"rgba({r},{g},{b},{opacity})"
+        return hex_color
+
 
 # 卡片样式
 CARD_STYLE = {
