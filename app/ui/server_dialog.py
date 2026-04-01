@@ -204,39 +204,48 @@ class DeviceDialogModal(ft.Container):
             self.update()
             return
 
-        logger.info(f"测试连接: {self.username_field.value}@{self.ip_field.value}:{self.port_field.value}")
-        self.test_progress_ref.current.visible = True
-        self.test_result_ref.current.value = "正在测试连接..."
-        self.test_result_ref.current.color = Colors.INFO
-        self.save_btn_ref.current.disabled = True
+        # 提取 primitives，避免闭包捕获 self（里面有含 set 的 Flet 控件）
+        host = self.ip_field.value
+        port = int(self.port_field.value or 22)
+        username = self.username_field.value
+        password = self.password_field.value or None
+        ssh_key_path = self.ssh_key_field.value or None
+        progress_bar = self.test_progress_ref.current
+        result_text = self.test_result_ref.current
+        save_btn = self.save_btn_ref.current
+
+        logger.info(f"测试连接: {username}@{host}:{port}")
+        progress_bar.visible = True
+        result_text.value = "正在测试连接..."
+        result_text.color = Colors.INFO
+        save_btn.disabled = True
         self.update()
 
         def test():
             try:
                 success, message = ssh_manager.test_connection(
-                    host=self.ip_field.value,
-                    port=int(self.port_field.value or 22),
-                    username=self.username_field.value,
-                    password=self.password_field.value or None,
-                    ssh_key_path=self.ssh_key_field.value or None,
+                    host=host, port=port, username=username,
+                    password=password, ssh_key_path=ssh_key_path,
                 )
+
                 def update_ui():
-                    self.test_progress_ref.current.visible = False
+                    progress_bar.visible = False
                     if success:
-                        self.test_result_ref.current.value = f"[OK] {message}"
-                        self.test_result_ref.current.color = Colors.SUCCESS
+                        result_text.value = f"[OK] {message}"
+                        result_text.color = Colors.SUCCESS
                     else:
-                        self.test_result_ref.current.value = f"[X] {message}"
-                        self.test_result_ref.current.color = Colors.ERROR
-                    self.save_btn_ref.current.disabled = False
+                        result_text.value = f"[X] {message}"
+                        result_text.color = Colors.ERROR
+                    save_btn.disabled = False
                     self.update()
+
                 self._page.call_later(0, update_ui)
             except Exception as ex:
                 def update_ui():
-                    self.test_progress_ref.current.visible = False
-                    self.test_result_ref.current.value = f"[X] 测试失败: {str(ex)}"
-                    self.test_result_ref.current.color = Colors.ERROR
-                    self.save_btn_ref.current.disabled = False
+                    progress_bar.visible = False
+                    result_text.value = f"[X] 测试失败: {str(ex)}"
+                    result_text.color = Colors.ERROR
+                    save_btn.disabled = False
                     self.update()
                 self._page.call_later(0, update_ui)
 
