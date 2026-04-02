@@ -44,6 +44,16 @@ class MainWindow:
         logger.info(f"已注册插件: {[p.name for p in plugins]}")
         logger.info("MainWindow 初始化完成")
 
+    def _show_snack_bar(self, message: str):
+        """显示 SnackBar 消息
+
+        Flet 0.83.1 使用 page.overlay 配合 SnackBar 替代已废弃的 page.show_snack_bar()
+        """
+        snackbar = ft.SnackBar(content=ft.Text(message))
+        self.page.overlay.append(snackbar)
+        snackbar.open = True
+        self.page.update()
+
     def _setup_page(self):
         """设置页面"""
         logger.debug("设置页面属性...")
@@ -311,23 +321,17 @@ class MainWindow:
             device.id = device_id
             logger.info(f"设备添加完成: id={device_id}, name={device.name}")
             self._load_devices()
-            self.page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(f"{device.name} 添加成功"))
-            )
+            self._show_snack_bar(f"{device.name} 添加成功")
         except Exception as e:
             logger.error(f"保存新设备异常: {e}")
-            self.page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(f"添加失败: {e}"))
-            )
+            self._show_snack_bar(f"添加失败: {e}")
 
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
         logger.debug(f"打开编辑设备对话框: id={device.id}, name={device.name}")
         # 示例设备不允许编辑
         if device.is_demo:
-            self.page.show_snack_bar(
-                ft.SnackBar(content=ft.Text("这是示例设备，无法编辑"))
-            )
+            self._show_snack_bar("这是示例设备，无法编辑")
             return
         try:
             self._edit_dialog = DeviceDialog(
@@ -371,9 +375,7 @@ class MainWindow:
 
         except Exception as e:
             logger.error(f"保存设备异常: {e}")
-            self.page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(f"保存失败: {e}"))
-            )
+            self._show_snack_bar(f"保存失败: {e}")
 
     def _handle_delete_device(self, device_id: int):
         """删除设备（示例设备不允许删除）"""
@@ -382,18 +384,14 @@ class MainWindow:
             # 禁止删除示例设备
             device = self.db.get_device(device_id)
             if device and device.is_demo:
-                self.page.show_snack_bar(
-                    ft.SnackBar(content=ft.Text("示例设备无法删除"))
-                )
+                self._show_snack_bar("示例设备无法删除")
                 return
             self.db.delete_device(device_id)
             logger.info(f"设备删除完成: id={device_id}")
             self._load_devices()
         except Exception as e:
             logger.error(f"删除设备异常: {e}")
-            self.page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(f"删除失败: {e}"))
-            )
+            self._show_snack_bar(f"删除失败: {e}")
 
     def _refresh_device(self, device: Device):
         """刷新设备信息"""
@@ -454,9 +452,7 @@ class MainWindow:
                 # 更新 UI - 从线程安全调用
                 def update_ui():
                     self._load_devices()
-                    self.page.show_snack_bar(
-                        ft.SnackBar(content=ft.Text(f"{device_name} 刷新成功"))
-                    )
+                    self._show_snack_bar(f"{device_name} 刷新成功")
 
                 self.page.loop.call_later(0, update_ui)
                 logger.info(f"设备刷新成功: {device_name}")
@@ -469,9 +465,7 @@ class MainWindow:
 
                 def update_ui():
                     self._load_devices()
-                    self.page.show_snack_bar(
-                        ft.SnackBar(content=ft.Text(f"{device_name} 刷新失败: {e}"))
-                    )
+                    self._show_snack_bar(f"{device_name} 刷新失败: {e}")
 
                 self.page.loop.call_later(0, update_ui)
 

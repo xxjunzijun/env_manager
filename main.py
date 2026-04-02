@@ -49,8 +49,9 @@ def show_error_dialog(page: ft.Page, title: str, message: str, details: str = No
     )
     
     def close_and_exit(e):
-        page.window_close()
-    
+        dialog.open = False
+        page.update()
+
     dialog = ft.AlertDialog(
         modal=True,
         title=ft.Text("错误"),
@@ -60,7 +61,7 @@ def show_error_dialog(page: ft.Page, title: str, message: str, details: str = No
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
-    
+
     page.dialog = dialog
     dialog.open = True
     page.update()
