@@ -180,14 +180,14 @@ class DeviceCard(ft.Container):
     def _handle_hover(self, e):
         self._hovered = e.data == "true"
         if self._hovered:
-            self.border_color = Colors.PRIMARY
+            self.border = ft.Border.all(ft.BorderSide(color=Colors.PRIMARY, width=1))
             self.shadow = ft.BoxShadow(
                 spread_radius=2,
                 blur_radius=8,
                 color="#2196F320",
             )
         else:
-            self.border_color = Colors.BORDER
+            self.border = ft.Border.all(ft.BorderSide(color=Colors.BORDER, width=1))
             self.shadow = ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=4,

@@ -35,7 +35,7 @@ def show_error_dialog(page: ft.Page, title: str, message: str, details: str = No
         content.controls.append(
             ft.Container(
                 content=ft.Text(details, size=11, font_family="monospace"),
-                bgcolor=ft.Colors.with_opacity(0.3, ft.Colors.GREY_200),
+                bgcolor=ft.Colors.with_opacity(ft.Colors.GREY_200, 0.3),
                 padding=10,
                 border_radius=5,
                 height=200,
