@@ -54,7 +54,6 @@ class MainWindow:
         self.page.padding = 0
         logger.debug("页面属性设置完成: title=Server Manager, size=1200x800")
         self.page.theme = ft.Theme(
-            bgcolor=Colors.PRIMARY,
             color_scheme_seed=Colors.PRIMARY,
         )
 
