@@ -214,12 +214,12 @@ class TestImports:
         assert "text_size" not in params, "ButtonStyle should not have direct text_size param"
 
     def test_flet_padding_api(self):
-        """验证 ft.padding.Padding 和 ft.padding.only 可用"""
+        """验证 ft.Padding 和 ft.Padding.only 可用"""
         import flet as ft
 
-        p = ft.padding.Padding(1, 2, 3, 4)
+        p = ft.Padding(1, 2, 3, 4)
         assert p.left == 1 and p.top == 2
-        p2 = ft.padding.only(left=1, top=2)
+        p2 = ft.Padding.only(left=1, top=2)
         assert p2.left == 1 and p2.top == 2
 
     def test_flet_deprecated_padding_symmetric_warn(self):
