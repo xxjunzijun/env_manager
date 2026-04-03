@@ -49,7 +49,6 @@ class ConnectDialog(ft.Container):
             hint_text="如: 192.168.1.100",
             autofocus=True,
             keyboard_type=ft.KeyboardType.URL,
-            on_submit=lambda e: self._focus_field(self.username_field),
         )
         self.port_field = ft.TextField(
             label="端口",
@@ -57,12 +56,10 @@ class ConnectDialog(ft.Container):
             value="22",
             keyboard_type=ft.KeyboardType.NUMBER,
             width=120,
-            on_submit=lambda e: self._focus_field(self.username_field),
         )
         self.username_field = ft.TextField(
             label="用户名",
             hint_text="root",
-            on_submit=lambda e: self._focus_field(self.password_field),
         )
         self.password_field = ft.TextField(
             label="密码",
@@ -71,15 +68,6 @@ class ConnectDialog(ft.Container):
             can_reveal_password=True,
             on_submit=lambda e: self._do_connect(),
         )
-
-        # Tab 焦点顺序（Tab 键 → 跳到下一个字段）
-        self._tab_order = [
-            self.ip_field,
-            self.username_field,
-            self.password_field,
-        ]
-        for i, field in enumerate(self._tab_order[:-1]):
-            field._tab_next = self._tab_order[i + 1]
 
         # 类型选择器
         self.type_segmented = ft.SegmentedButton(
@@ -179,7 +167,11 @@ class ConnectDialog(ft.Container):
         if self not in self._page.controls:
             self._page.add(self)
         self._page.update()
-        self._page.run_task(lambda: self.ip_field.focus())
+
+        async def _focus():
+            await self.ip_field.focus()
+
+        self._page.run_task(_focus)
         logger.debug("ConnectDialog 已显示")
 
     def hide(self):
@@ -192,13 +184,6 @@ class ConnectDialog(ft.Container):
         self.progress_bar.visible = False
         self._page.update()
         logger.debug("ConnectDialog 已隐藏并重置")
-
-    # ---- Tab 键导航 ----
-
-    def _focus_field(self, field: ft.TextField):
-        """切换焦点到指定字段"""
-        field.focus()
-        self._page.update()
 
     # ---- 事件处理 ----
 
