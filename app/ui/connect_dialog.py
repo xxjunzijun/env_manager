@@ -179,7 +179,7 @@ class ConnectDialog(ft.Container):
         if self not in self._page.controls:
             self._page.add(self)
         self._page.update()
-        self.ip_field.focus()
+        self._page.run_task(lambda: self.ip_field.focus())
         logger.debug("ConnectDialog 已显示")
 
     def hide(self):
