@@ -39,8 +39,27 @@ def init_database():
     engine = get_engine()
     Device.metadata.create_all(engine)
     DeviceHistory.metadata.create_all(engine)
+    _migrate_if_needed(engine)
     logger.info(f"数据库初始化完成: {DB_PATH}")
     return engine
+
+
+def _migrate_if_needed(engine):
+    """迁移旧数据库：添加新列（如果不存在）"""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        # 检查 devices 表是否有 is_demo 列
+        try:
+            conn.execute(text("SELECT is_demo FROM devices LIMIT 1"))
+            logger.debug("is_demo 列已存在，无需迁移")
+        except Exception:
+            logger.warning("检测到旧数据库，添加 is_demo 列...")
+            try:
+                conn.execute(text("ALTER TABLE devices ADD COLUMN is_demo BOOLEAN DEFAULT 0"))
+                conn.commit()
+                logger.info("is_demo 列添加成功")
+            except Exception as e:
+                logger.error(f"is_demo 列迁移失败: {e}")
 
 
 def get_session():
