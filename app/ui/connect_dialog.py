@@ -123,7 +123,7 @@ class ConnectDialog(ft.Container):
                     ref=self.connect_btn_ref,
                     on_click=lambda e: self._do_connect(),
                     style=BUTTON_STYLE,
-                    icon=ft.icons.Icons.POWER_SETTINGS,
+                    icon=ft.icons.Icons.POWER_SETTINGS_NEW,
                 ),
             ],
             alignment=ft.MainAxisAlignment.END,
