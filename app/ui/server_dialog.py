@@ -53,7 +53,7 @@ class DeviceDialogModal(ft.Container):
                 ft.Segment(value="server", label=ft.Text("[SVR] 服务器")),
                 ft.Segment(value="switch", label=ft.Text("[SW] 交换机")),
             ],
-            selected=["server" if not self.is_edit or device.device_type == "server" else "switch"],
+            selected=["server"] if not self.is_edit else ["server" if device.device_type == "server" else "switch"],
             on_change=self._on_type_change,
         )
 
@@ -117,6 +117,7 @@ class DeviceDialogModal(ft.Container):
                 self.status_text,
             ],
             tight=True, spacing=8, scroll=ft.ScrollMode.AUTO,
+            height=360,
         )
 
         actions_row = ft.Row(
