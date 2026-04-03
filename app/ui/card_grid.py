@@ -15,7 +15,7 @@ class DeviceCardGrid(ft.Container):
     """
     设备卡片网格容器
     
-    自动排列设备卡片，支持添加按钮
+    自动排列设备卡片，添加按钮卡片放在网格最后
     """
     
     def __init__(
@@ -42,18 +42,11 @@ class DeviceCardGrid(ft.Container):
             auto_scroll=True,
         )
         
-        # 添加设备卡片（放在 GridView 上方，作为独立行，不塞进 GridView 内部）
+        # 添加设备卡片（放在 GridView 内部，与设备卡片平级，位于最后）
         self.add_card = AddDeviceCard(on_click=on_add_click) if on_add_click else None
         
-        # 外层用 Column 包裹，让添加卡片和 GridView 上下排列
-        self.inner = ft.Column(
-            [self.add_card, self.grid] if self.add_card else [self.grid],
-            spacing=0,
-            expand=True,
-        )
-        
         super().__init__(
-            content=self.inner,
+            content=self.grid,
             expand=True,
             bgcolor=Colors.BG,
         )
@@ -78,15 +71,16 @@ class DeviceCardGrid(ft.Container):
             )
             self.grid.controls.append(card)
         
-        # 注意：添加设备按钮已移至 MainWindow 工具栏（不在 GridView 内）
-        # GridView 在 Flet 0.83 里会拦截子控件的点击事件
+        # 添加设备按钮卡片放在最后
+        if self.add_card:
+            self.grid.controls.append(self.add_card)
 
 
 class DeviceListView(ft.ListView):
     """
     设备列表视图（替代网格视图）
     
-    适合大量设备的显示
+    适合大量设备的显示，添加按钮卡片放在最后
     """
     
     def __init__(
@@ -101,6 +95,9 @@ class DeviceListView(ft.ListView):
         self.on_card_click = on_card_click
         self.on_card_refresh = on_card_refresh
         self.on_add_click = on_add_click
+        
+        # 添加设备按钮卡片（放在 ListView 最后）
+        self.add_card = AddDeviceCard(on_click=on_add_click) if on_add_click else None
         
         super().__init__(
             expand=True,
@@ -162,5 +159,7 @@ class DeviceListView(ft.ListView):
             )
             self.controls.append(card)
         
-        # 注意：添加设备按钮已移至 MainWindow 工具栏（不在 ListView 内）
-        # ListView 在 Flet 0.83 里会拦截子控件的点击事件
+        # 添加设备按钮卡片放在最后
+        if self.add_card:
+            self.add_card.width = None  # ListView 下不限制宽度
+            self.controls.append(self.add_card)

@@ -313,9 +313,20 @@ class MainWindow:
         except Exception as ex:
             logger.error(f"显示添加对话框失败: {ex}", exc_info=True)
 
+    def _is_ip_duplicate(self, ip_address: str, exclude_id: int = None) -> bool:
+        """检查 IP 地址是否已被其他设备使用"""
+        all_devices = self.db.get_all_devices()
+        for d in all_devices:
+            if d.ip_address == ip_address and (exclude_id is None or d.id != exclude_id):
+                return True
+        return False
+
     def _handle_new_device_connected(self, device: Device):
         """新设备连接成功后保存"""
         logger.info(f"新设备连接成功: name={device.name}, ip={device.ip_address}")
+        if self._is_ip_duplicate(device.ip_address):
+            self._show_snack_bar(f"IP {device.ip_address} 已存在，请勿重复添加")
+            return
         try:
             device_id = self.db.add_device(device)
             device.id = device_id
@@ -348,6 +359,9 @@ class MainWindow:
     def _handle_save_device(self, device: Device):
         """保存设备"""
         logger.info(f"保存设备: name={device.name}, type={device.device_type}")
+        if self._is_ip_duplicate(device.ip_address, exclude_id=device.id):
+            self._show_snack_bar(f"IP {device.ip_address} 已被其他设备使用")
+            return
         try:
             if device.id:
                 # 更新
