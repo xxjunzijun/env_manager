@@ -175,7 +175,6 @@ class DeviceCard(ft.Container):
         logger.debug(f"DeviceCard refresh clicked: {self.device.name}")
         if self._user_on_refresh:
             self._user_on_refresh(self.device)
-        e.stop_propagation()
 
     def _handle_hover(self, e):
         self._hovered = e.data == "true"
