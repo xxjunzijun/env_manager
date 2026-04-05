@@ -58,13 +58,14 @@ class MainWindow:
         """设置页面"""
         logger.debug("设置页面属性...")
         self.page.title = "[SVR] Server Manager - 服务器/交换机管理"
-        self.page.theme_mode = ft.ThemeMode.LIGHT
+        self.page.theme_mode = ft.ThemeMode.DARK  # 深色主题
         self.page.window_width = 1200
         self.page.window_height = 800
         self.page.padding = 0
-        logger.debug("页面属性设置完成: title=Server Manager, size=1200x800")
+        logger.debug("页面属性设置完成: title=Server Manager, size=1200x800, theme=dark")
         self.page.theme = ft.Theme(
             color_scheme_seed=Colors.PRIMARY,
+            brightness=ft.Brightness.DARK,
         )
 
     def _setup_ui(self):
@@ -134,6 +135,7 @@ class MainWindow:
             on_card_click=self._show_edit_dialog,
             on_card_refresh=self._refresh_device,
             on_add_click=self._show_add_dialog,
+            on_reorder=self._handle_reorder,
         )
 
         # 对话框引用（ConnectDialog 用于添加，DeviceDialog 用于编辑）
@@ -297,6 +299,17 @@ class MainWindow:
             ft.icons.Icons.VIEW_LIST if self._is_grid_view else ft.icons.Icons.GRID_VIEW
         )
         self._update_device_view()
+
+    def _handle_reorder(self, devices: List[Device]):
+        """处理卡片拖拽排序"""
+        logger.info(f"卡片排序更新: 共 {len(devices)} 台设备")
+        try:
+            # 更新每台设备的 display_order
+            for order, device in enumerate(devices):
+                self.db.update_device(device.id, display_order=order)
+            logger.info("设备排序已保存")
+        except Exception as e:
+            logger.error(f"保存设备排序失败: {e}")
 
     def _show_add_dialog(self, e=None):
         """显示添加设备对话框（快速连接流程）"""

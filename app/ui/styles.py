@@ -7,30 +7,35 @@ import flet as ft
 
 # 颜色主题
 class Colors:
-    """颜色定义"""
+    """颜色定义 - 现代深色主题"""
     # 主色调
-    PRIMARY = "#2196F3"      # 蓝色
-    PRIMARY_DARK = "#1976D2"
-    PRIMARY_LIGHT = "#BBDEFB"
+    PRIMARY = "#6366F1"      # 靛蓝色
+    PRIMARY_DARK = "#4F46E5"
+    PRIMARY_LIGHT = "#C7D2FE"
     
-    # 背景色
-    BG = "#F5F5F5"
-    CARD_BG = "#FFFFFF"
+    # 背景色 - 深色主题
+    BG = "#0F172A"           # 深蓝黑
+    CARD_BG = "#1E293B"      # 深灰蓝
+    CARD_BG_HOVER = "#334155"  # 悬停色
     
     # 状态色
-    SUCCESS = "#4CAF50"      # 在线/成功
-    WARNING = "#FF9800"      # 警告
-    ERROR = "#F44336"        # 离线/错误
-    INFO = "#9E9E9E"         # 未知/信息
+    SUCCESS = "#22C55E"      # 在线/成功 - 绿色
+    WARNING = "#F59E0B"      # 警告 - 琥珀色
+    ERROR = "#EF4444"        # 离线/错误 - 红色
+    INFO = "#64748B"         # 未知/信息 - 灰蓝色
     
     # 文字色
-    TEXT_PRIMARY = "#212121"
-    TEXT_SECONDARY = "#757575"
-    TEXT_DISABLED = "#BDBDBD"
+    TEXT_PRIMARY = "#F8FAFC"
+    TEXT_SECONDARY = "#94A3B8"
+    TEXT_DISABLED = "#475569"
     
-    # 边框
-    BORDER = "#E0E0E0"
-    BORDER_HOVER = "#9E9E9E"
+    # 边框 - 渐变边框色
+    BORDER = "#334155"
+    BORDER_HOVER = "#6366F1"
+    
+    # 渐变色
+    GRADIENT_START = "#6366F1"
+    GRADIENT_END = "#8B5CF6"
 
     @staticmethod
     def with_opacity(hex_color: str, opacity: float) -> str:
@@ -42,27 +47,28 @@ class Colors:
         return hex_color
 
 
-# 卡片样式
+# 卡片样式 - 现代圆角和阴影
 CARD_STYLE = {
     "width": 220,
     "height": 200,
-    "border_radius": 12,
+    "border_radius": 16,
     "border": ft.Border.all(width=1, color=Colors.BORDER),
     "bgcolor": Colors.CARD_BG,
     "shadow": ft.BoxShadow(
         spread_radius=1,
-        blur_radius=4,
-        color="#00000010",
+        blur_radius=8,
+        color="#00000030",
     ),
-    "padding": 12,
+    "padding": 14,
 }
 
+# 悬停样式
 CARD_HOVER_STYLE = {
-    "border": ft.Border.all(width=1, color=Colors.PRIMARY),
+    "border": ft.Border.all(width=2, color=Colors.PRIMARY),
     "shadow": ft.BoxShadow(
-        spread_radius=2,
-        blur_radius=8,
-        color="#2196F320",
+        spread_radius=3,
+        blur_radius=12,
+        color="#6366F140",
     ),
 }
 
@@ -79,7 +85,8 @@ def get_device_type_color(device_type: str) -> str:
     """获取设备类型对应的颜色"""
     colors = {
         "server": Colors.PRIMARY,
-        "switch": "#9C27B0",  # 紫色
+        "switch": "#A855F7",  # 紫色
+        "demo": "#F59E0B",    # 琥珀色
     }
     return colors.get(device_type, Colors.INFO)
 

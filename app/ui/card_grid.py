@@ -2,13 +2,17 @@
 app/ui/card_grid.py - 卡片网格布局
 
 设备卡片网格容器，支持添加/删除/刷新卡片
+支持拖拽排序
 """
 
 import flet as ft
-from typing import List, Callable
+from typing import List, Callable, Optional
 from app.data.models import Device
 from app.ui.card_widget import DeviceCard, AddDeviceCard
 from app.ui.styles import Colors
+from app.utils.logger import get_logger
+
+logger = get_logger("ui.cardgrid")
 
 
 class DeviceCardGrid(ft.Container):
@@ -16,6 +20,7 @@ class DeviceCardGrid(ft.Container):
     设备卡片网格容器
     
     自动排列设备卡片，添加按钮卡片放在网格最后
+    支持拖拽排序
     """
     
     def __init__(
@@ -24,29 +29,35 @@ class DeviceCardGrid(ft.Container):
         on_card_click: Callable[[Device], None] = None,
         on_card_refresh: Callable[[Device], None] = None,
         on_add_click: Callable = None,
+        on_reorder: Callable[[List[Device]], None] = None,
         **kwargs
     ):
         self.devices = devices or []
         self.on_card_click = on_card_click
         self.on_card_refresh = on_card_refresh
         self.on_add_click = on_add_click
+        self.on_reorder = on_reorder
         
-        # 卡片网格
-        self.grid = ft.GridView(
-            expand=True,
-            runs_count=4,  # 默认每行4个
-            max_extent=230,  # 卡片最大宽度
+        # 拖拽状态
+        self._drag_source_index: Optional[int] = None
+        self._drag_target_index: Optional[int] = None
+        
+        # 卡片网格 - 使用 wrap 模式以便支持拖拽
+        self.grid = ft.Wrap(
             spacing=16,
-            padding=16,
-            child_aspect_ratio=1.0,  # 卡片宽高比
-            auto_scroll=True,
+            run_spacing=16,
+            alignment=ft.WrapAlignment.START,
         )
         
-        # 添加设备卡片（放在 GridView 内部，与设备卡片平级，位于最后）
+        # 添加设备卡片
         self.add_card = AddDeviceCard(on_click=on_add_click) if on_add_click else None
         
         super().__init__(
-            content=self.grid,
+            content=ft.Column(
+                [self.grid],
+                scroll=ft.ScrollMode.AUTO,
+                expand=True,
+            ),
             expand=True,
             bgcolor=Colors.BG,
         )
@@ -63,17 +74,104 @@ class DeviceCardGrid(ft.Container):
         self.grid.controls.clear()
         
         # 添加设备卡片
-        for device in self.devices:
+        for i, device in enumerate(self.devices):
             card = DeviceCard(
                 device=device,
                 on_click=self.on_card_click,
                 on_refresh=self.on_card_refresh,
             )
+            # 设置拖拽属性
+            card.draggable = True
+            card.on_drag_start = lambda e, idx=i: self._handle_drag_start(e, idx)
+            card.on_drag_end = lambda e: self._handle_drag_end(e)
+            card.data = i  # 存储索引
+            
+            # 拖放目标处理
+            card.on_drag_enter = lambda e, idx=i: self._handle_drag_enter(e, idx)
+            card.on_drag_over = lambda e: self._handle_drag_over(e)
+            card.on_drag_leave = lambda e: self._handle_drag_leave(e)
+            card.on_drop = lambda e, idx=i: self._handle_drop(e, idx)
+            
             self.grid.controls.append(card)
         
         # 添加设备按钮卡片放在最后
         if self.add_card:
+            # 添加按钮卡片不设置拖拽
             self.grid.controls.append(self.add_card)
+    
+    def _handle_drag_start(self, e: ft.DragStartEvent, index: int):
+        """开始拖拽"""
+        self._drag_source_index = index
+        logger.debug(f"拖拽开始: index={index}")
+    
+    def _handle_drag_end(self, e: ft.DragEndEvent):
+        """结束拖拽"""
+        logger.debug(f"拖拽结束")
+        self._drag_source_index = None
+        self._drag_target_index = None
+        # 移除所有高亮
+        self._rebuild_grid()
+    
+    def _handle_drag_enter(self, e: ft.DragTargetEvent, target_index: int):
+        """拖拽进入目标"""
+        if self._drag_source_index is not None and self._drag_source_index != target_index:
+            self._drag_target_index = target_index
+            # 高亮目标卡片
+            self._highlight_target(target_index)
+        e.prevent_default()
+    
+    def _handle_drag_over(self, e: ft.DragTargetEvent):
+        """拖拽经过目标"""
+        e.prevent_default()
+    
+    def _handle_drag_leave(self, e: ft.DragTargetLeaveEvent):
+        """拖拽离开目标"""
+        pass
+    
+    def _handle_drop(self, e: ft.DragTargetEvent, target_index: int):
+        """放置卡片"""
+        e.prevent_default()
+        
+        if self._drag_source_index is None or self._drag_source_index == target_index:
+            return
+        
+        logger.debug(f"放置: source={self._drag_source_index}, target={target_index}")
+        
+        # 重新排序设备列表
+        devices = self.devices.copy()
+        source_device = devices.pop(self._drag_source_index)
+        
+        # 调整目标索引（如果源在目标之前）
+        adjusted_target = target_index
+        if self._drag_source_index < target_index:
+            adjusted_target = target_index - 1
+        
+        devices.insert(adjusted_target, source_device)
+        self.devices = devices
+        
+        # 触发重绘
+        self._rebuild_grid()
+        
+        # 持久化新顺序到数据库
+        if self.on_reorder:
+            self.on_reorder(self.devices)
+        
+        self._drag_source_index = None
+        self._drag_target_index = None
+    
+    def _highlight_target(self, target_index: int):
+        """高亮目标卡片"""
+        self._rebuild_grid()
+        if 0 <= target_index < len(self.grid.controls):
+            target_card = self.grid.controls[target_index]
+            if not isinstance(target_card, AddDeviceCard):
+                target_card.border = ft.Border.all(width=2, color=Colors.PRIMARY)
+                target_card.shadow = ft.BoxShadow(
+                    spread_radius=3,
+                    blur_radius=12,
+                    color="#6366F150",
+                )
+                target_card.update()
 
 
 class DeviceListView(ft.ListView):

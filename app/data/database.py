@@ -60,6 +60,19 @@ def _migrate_if_needed(engine):
                 logger.info("is_demo 列添加成功")
             except Exception as e:
                 logger.error(f"is_demo 列迁移失败: {e}")
+        
+        # 检查 devices 表是否有 display_order 列
+        try:
+            conn.execute(text("SELECT display_order FROM devices LIMIT 1"))
+            logger.debug("display_order 列已存在，无需迁移")
+        except Exception:
+            logger.warning("检测到旧数据库，添加 display_order 列...")
+            try:
+                conn.execute(text("ALTER TABLE devices ADD COLUMN display_order INTEGER DEFAULT 0"))
+                conn.commit()
+                logger.info("display_order 列添加成功")
+            except Exception as e:
+                logger.error(f"display_order 列迁移失败: {e}")
 
 
 def get_session():
@@ -80,6 +93,12 @@ class DeviceDB:
         """添加设备"""
         logger.info(f"添加设备: name={device.name}, type={device.device_type}, ip={device.ip_address}")
         with Session(self.engine) as session:
+            # 获取当前最大 display_order
+            max_order = session.exec(
+                select(Device.display_order).order_by(Device.display_order.desc()).limit(1)
+            ).first()
+            device.display_order = (max_order or 0) + 1
+            
             session.add(device)
             session.commit()
             session.refresh(device)
@@ -98,10 +117,12 @@ class DeviceDB:
             return device
     
     def get_all_devices(self) -> list[Device]:
-        """获取所有设备"""
+        """获取所有设备（按显示顺序排序）"""
         logger.debug("查询所有设备")
         with Session(self.engine) as session:
-            devices = session.exec(select(Device)).all()
+            devices = session.exec(
+                select(Device).order_by(Device.display_order, Device.id)
+            ).all()
             logger.debug(f"设备列表查询完成: 共 {len(devices)} 台")
             return devices
     

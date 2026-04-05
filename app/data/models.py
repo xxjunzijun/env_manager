@@ -16,6 +16,7 @@ class Device(SQLModel, table=True):
     设备类型:
     - server: 服务器
     - switch: 交换机
+    - demo: 演示模式
     """
     __tablename__ = "devices"
     
@@ -24,7 +25,7 @@ class Device(SQLModel, table=True):
     
     # 基础信息
     name: str = Field(index=True, description="设备名称")
-    device_type: str = Field(default="server", description="设备类型: server/switch")
+    device_type: str = Field(default="server", description="设备类型: server/switch/demo")
     ip_address: str = Field(description="IP 地址")
     port: int = Field(default=22, description="SSH 端口")
     username: str = Field(description="SSH 用户名")
@@ -49,6 +50,9 @@ class Device(SQLModel, table=True):
 
     # 是否为示例设备（示例卡片，不可删除）
     is_demo: bool = Field(default=False, description="是否为示例设备")
+    
+    # 显示顺序
+    display_order: int = Field(default=0, description="显示顺序")
 
     # 时间戳
     created_at: datetime = Field(default_factory=datetime.now)
