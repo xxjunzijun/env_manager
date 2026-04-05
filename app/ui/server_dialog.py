@@ -52,8 +52,9 @@ class DeviceDialogModal(ft.Container):
             segments=[
                 ft.Segment(value="server", label=ft.Text("[SVR] 服务器")),
                 ft.Segment(value="switch", label=ft.Text("[SW] 交换机")),
+                ft.Segment(value="demo", label=ft.Text("[DEMO] 演示")),
             ],
-            selected=["server"] if not self.is_edit else ["server" if device.device_type == "server" else "switch"],
+            selected=["server"] if not self.is_edit else ["server" if device.device_type == "server" else "switch" if device.device_type == "switch" else "demo"],
             on_change=self._on_type_change,
         )
 

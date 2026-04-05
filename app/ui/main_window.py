@@ -423,37 +423,55 @@ class MainWindow:
         ssh_key_path = device.ssh_key_path
         device_type = device.device_type
 
-        logger.info(f"刷新设备任务启动: id={device_id}, name={device_name}, ip={host}")
+        # 判断是否为 demo 模式：device_type 为 "demo" 或名称含 "demo"
+        is_demo_mode = device_type == "demo" or "demo" in device_name.lower()
+        if is_demo_mode:
+            logger.info(f"Demo 模式设备，使用 StubPlugin: {device_name}")
+
+        logger.info(f"刷新设备任务启动: id={device_id}, name={device_name}, ip={host}, is_demo={is_demo_mode}")
 
         def do_refresh():
             try:
-                logger.debug(f"开始 SSH 连接: {host}:{port}")
-
-                # 获取 SSH 连接
-                conn = ssh_manager.connect(
-                    host=host, port=port,
-                    username=username,
-                    password=password,
-                    ssh_key_path=ssh_key_path,
-                )
-
                 # 获取该设备类型对应的插件
                 plugins = CardPluginRegistry.get_plugins_for_type(device_type)
                 logger.debug(f"找到 {len(plugins)} 个插件: {[p.info.name for p in plugins]}")
 
                 # 合并所有插件数据
                 all_data = {}
-                for plugin in plugins:
-                    try:
-                        logger.debug(f"执行插件: {plugin.info.name}")
-                        data = plugin.fetch(conn)
-                        all_data.update(data)
-                    except Exception as e:
-                        logger.error(f"插件 {plugin.info.name} 执行失败: {e}")
+                
+                if is_demo_mode:
+                    # Demo 模式：使用 StubPlugin，不进行真实 SSH 连接
+                    stub_plugin = CardPluginRegistry.get_plugin("stub")
+                    if stub_plugin:
+                        try:
+                            logger.debug("执行 StubPlugin 获取模拟数据")
+                            data = stub_plugin.fetch(None)  # ssh_conn 参数被忽略
+                            all_data.update(data)
+                        except Exception as e:
+                            logger.error(f"StubPlugin 执行失败: {e}")
+                else:
+                    # 真实模式：通过 SSH 获取数据
+                    logger.debug(f"开始 SSH 连接: {host}:{port}")
 
-                # 关闭连接
-                conn.close()
-                logger.debug("SSH 连接已关闭")
+                    # 获取 SSH 连接
+                    conn = ssh_manager.connect(
+                        host=host, port=port,
+                        username=username,
+                        password=password,
+                        ssh_key_path=ssh_key_path,
+                    )
+
+                    for plugin in plugins:
+                        try:
+                            logger.debug(f"执行插件: {plugin.info.name}")
+                            data = plugin.fetch(conn)
+                            all_data.update(data)
+                        except Exception as e:
+                            logger.error(f"插件 {plugin.info.name} 执行失败: {e}")
+
+                    # 关闭连接
+                    conn.close()
+                    logger.debug("SSH 连接已关闭")
 
                 # 更新数据库
                 self.db.update_device(
@@ -466,7 +484,8 @@ class MainWindow:
                 # 更新 UI - 从线程安全调用
                 def update_ui():
                     self._load_devices()
-                    self._show_snack_bar(f"{device_name} 刷新成功")
+                    mode_str = "[Demo] " if is_demo_mode else ""
+                    self._show_snack_bar(f"{mode_str}{device_name} 刷新成功")
 
                 self.page.loop.call_later(0, update_ui)
                 logger.info(f"设备刷新成功: {device_name}")
