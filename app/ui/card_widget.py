@@ -18,17 +18,28 @@ logger = get_logger("ui.events")
 
 
 def _build_card_content(device: Device, on_refresh, on_edit):
-    """构建设备卡片内容"""
-    type_icons = {"server": "[SVR]", "switch": "[SW]"}
+    """构建设备卡片内容（简化版：只显示 IP、用户名、标签）"""
+    type_icons = {"server": "[SVR]", "switch": "[SW]", "demo": "[DEMO]"}
     icon = type_icons.get(device.device_type, "[DEV]")
     status_color = get_status_color(device.is_online)
     status_text = "在线" if device.is_online else "离线"
 
+    # 标签展示
+    tags = device.tags_list
+    tags_display = ""
+    if tags:
+        # 只显示前3个标签
+        display_tags = tags[:3]
+        tags_display = " ".join([f"[{t}]" for t in display_tags])
+        if len(tags) > 3:
+            tags_display += f" +{len(tags) - 3}"
+
     content = ft.Column(
         [
+            # 头部：图标、名称、状态
             ft.Row(
                 [
-                    ft.Text(icon, size=24),
+                    ft.Text(icon, size=20),
                     ft.Column(
                         [
                             ft.Text(
@@ -55,23 +66,53 @@ def _build_card_content(device: Device, on_refresh, on_edit):
                 ],
                 alignment=ft.MainAxisAlignment.START,
             ),
-            ft.Divider(height=8, color=Colors.BORDER),
+            ft.Divider(height=6, color=Colors.BORDER),
+            
+            # IP 地址
             ft.Row(
                 [
                     ft.Text("📍", size=12),
                     ft.Text(
                         f"{device.ip_address}:{device.port}",
                         size=12,
-                        color=Colors.TEXT_SECONDARY,
+                        color=Colors.TEXT_PRIMARY,
+                        weight=ft.FontWeight.W_500,
                     ),
                 ],
             ),
+            
+            # 用户名
             ft.Text(
                 f"用户: {device.username}",
                 size=11,
                 color=Colors.TEXT_SECONDARY,
             ),
+            
+            # 密码（默认隐藏）
+            ft.Row(
+                [
+                    ft.Text("🔑", size=12),
+                    ft.Text(
+                        "••••••",
+                        size=12,
+                        color=Colors.TEXT_SECONDARY,
+                    ),
+                ],
+            ),
+            
+            # 标签
+            ft.Container(
+                content=ft.Text(
+                    tags_display,
+                    size=10,
+                    color=Colors.PRIMARY,
+                ),
+                padding=ft.Padding(0, 4, 0, 0),
+            ) if tags_display else ft.Container(),
+            
             ft.Container(expand=True),
+            
+            # 底部按钮
             ft.Row(
                 [
                     ft.TextButton(
@@ -96,7 +137,7 @@ def _build_card_content(device: Device, on_refresh, on_edit):
                 alignment=ft.MainAxisAlignment.END,
             ),
         ],
-        spacing=4,
+        spacing=3,
     )
     return content
 
