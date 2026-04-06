@@ -65,7 +65,6 @@ class MainWindow:
         logger.debug("页面属性设置完成: title=Server Manager, size=1200x800, theme=dark")
         self.page.theme = ft.Theme(
             color_scheme_seed=Colors.PRIMARY,
-            brightness=ft.Brightness.DARK,
         )
 
     def _setup_ui(self):
