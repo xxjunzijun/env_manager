@@ -42,11 +42,12 @@ class DeviceCardGrid(ft.Container):
         self._drag_source_index: Optional[int] = None
         self._drag_target_index: Optional[int] = None
         
-        # 卡片网格 - 使用 wrap 模式以便支持拖拽
-        self.grid = ft.Wrap(
+        # 卡片网格 - 使用 Row(wrap=True) 代替不存在的 ft.Wrap
+        self.grid = ft.Row(
+            wrap=True,
             spacing=16,
             run_spacing=16,
-            alignment=ft.WrapAlignment.START,
+            alignment=ft.MainAxisAlignment.START,
         )
         
         # 添加设备卡片
