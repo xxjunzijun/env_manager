@@ -164,7 +164,7 @@ class DeviceCardGrid(ft.Container):
                 # DragTarget → Draggable → Stack → DeviceCard
                 draggable = target_control.content  # Draggable
                 stack = draggable.content  # Stack
-                card = stack.content[0]  # DeviceCard (first element in Stack content list)
+                card = stack.controls[0]  # DeviceCard (Stack 用 controls 不是 content)
                 if hasattr(card, 'border'):
                     card.border = ft.Border.all(width=2, color=Colors.PRIMARY)
                     card.shadow = ft.BoxShadow(
