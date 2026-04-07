@@ -61,6 +61,7 @@ class DeviceCardGrid(ft.Container):
                 expand=True,
             ),
             expand=True,
+            width=999999,  # 极大宽度，确保 Row wrap 能填满可用空间
             bgcolor=Colors.BG,
         )
         

@@ -352,10 +352,6 @@ class MainWindow:
     def _show_edit_dialog(self, device: Device):
         """显示编辑设备对话框"""
         logger.debug(f"打开编辑设备对话框: id={device.id}, name={device.name}")
-        # 示例设备不允许编辑
-        if device.is_demo:
-            self._show_snack_bar("这是示例设备，无法编辑")
-            return
         try:
             self._edit_dialog = DeviceDialog(
                 page=self.page,
