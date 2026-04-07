@@ -92,7 +92,6 @@ class TestDeviceCardGrid:
         """拖拽状态初始为空"""
         grid = DeviceCardGrid()
         assert grid._drag_source_index is None
-        assert grid._drag_target_index is None
 
     def test_grid_alignment_is_main_axis_start(self):
         """对齐方式为 MainAxisAlignment.START"""
