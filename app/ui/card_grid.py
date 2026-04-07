@@ -42,12 +42,13 @@ class DeviceCardGrid(ft.Container):
         self._drag_source_index: Optional[int] = None
         self._drag_target_index: Optional[int] = None
         
-        # 卡片网格 - 使用 Row(wrap=True) 代替不存在的 ft.Wrap
+        # 卡片网格 - 使用 Row(wrap=True) + expand 撑满宽度
         self.grid = ft.Row(
             wrap=True,
             spacing=16,
             run_spacing=16,
             alignment=ft.MainAxisAlignment.START,
+            expand=True,
         )
         
         # 添加设备卡片
@@ -74,77 +75,70 @@ class DeviceCardGrid(ft.Container):
         """重建卡片网格"""
         self.grid.controls.clear()
         
-        # 添加设备卡片
         for i, device in enumerate(self.devices):
             card = DeviceCard(
                 device=device,
                 on_click=self.on_card_click,
                 on_refresh=self.on_card_refresh,
             )
-            # 设置拖拽属性
-            card.draggable = True
-            card.on_drag_start = lambda e, idx=i: self._handle_drag_start(e, idx)
-            card.on_drag_end = lambda e: self._handle_drag_end(e)
-            card.data = i  # 存储索引
-            
-            # 拖放目标处理
-            card.on_drag_enter = lambda e, idx=i: self._handle_drag_enter(e, idx)
-            card.on_drag_over = lambda e: self._handle_drag_over(e)
-            card.on_drag_leave = lambda e: self._handle_drag_leave(e)
-            card.on_drop = lambda e, idx=i: self._handle_drop(e, idx)
-            
-            self.grid.controls.append(card)
+            # Stack: 卡片在底层，DragTarget 透明覆盖层在上层接收拖放事件
+            stack = ft.Stack([card], width=220, height=200)
+            # 用 Draggable 包装 Stack（draggable 属性在 Container 上无效）
+            draggable = ft.Draggable(
+                content=stack,
+                data=i,
+                on_drag_start=lambda e, idx=i: self._handle_drag_start(e, idx),
+                on_drag_complete=lambda e: self._handle_drag_end(e),
+            )
+            # DragTarget 透明覆盖在卡片上，接收 on_drag_accept 等事件
+            target = ft.DragTarget(
+                content=draggable,
+                on_accept=lambda e, idx=i: self._handle_drop(e, idx),
+                on_move=lambda e, idx=i: self._handle_card_drag_move(e, idx),
+            )
+            target.data = i  # 存储当前卡片的索引
+            self.grid.controls.append(target)
         
         # 添加设备按钮卡片放在最后
         if self.add_card:
-            # 添加按钮卡片不设置拖拽
             self.grid.controls.append(self.add_card)
     
-    def _handle_drag_start(self, e: ft.DragStartEvent, index: int):
-        """开始拖拽"""
+    def _handle_drag_start(self, e, index: int):
+        """开始拖拽 - 记录源卡片索引"""
         self._drag_source_index = index
         logger.debug(f"拖拽开始: index={index}")
     
-    def _handle_drag_end(self, e: ft.DragEndEvent):
+    def _handle_card_drag_move(self, e: ft.DragTargetEvent, target_index: int):
+        """拖拽经过卡片 - 高亮目标"""
+        if self._drag_source_index is not None and self._drag_source_index != target_index:
+            self._drag_target_index = target_index
+            self._highlight_target(target_index)
+    
+    def _handle_drag_end(self, e):
         """结束拖拽"""
         logger.debug(f"拖拽结束")
         self._drag_source_index = None
         self._drag_target_index = None
-        # 移除所有高亮
         self._rebuild_grid()
-    
-    def _handle_drag_enter(self, e: ft.DragTargetEvent, target_index: int):
-        """拖拽进入目标"""
-        if self._drag_source_index is not None and self._drag_source_index != target_index:
-            self._drag_target_index = target_index
-            # 高亮目标卡片
-            self._highlight_target(target_index)
-        e.prevent_default()
-    
-    def _handle_drag_over(self, e: ft.DragTargetEvent):
-        """拖拽经过目标"""
-        e.prevent_default()
-    
-    def _handle_drag_leave(self, e: ft.DragTargetLeaveEvent):
-        """拖拽离开目标"""
-        pass
     
     def _handle_drop(self, e: ft.DragTargetEvent, target_index: int):
         """放置卡片"""
-        e.prevent_default()
         
-        if self._drag_source_index is None or self._drag_source_index == target_index:
+        source_idx = self._drag_source_index
+        if source_idx is None or source_idx == target_index:
             return
         
-        logger.debug(f"放置: source={self._drag_source_index}, target={target_index}")
+        logger.debug(f"放置: source={source_idx}, target={target_index}")
         
         # 重新排序设备列表
         devices = self.devices.copy()
-        source_device = devices.pop(self._drag_source_index)
+        source_device = devices.pop(source_idx)
         
-        # 调整目标索引（如果源在目标之前）
+        # 调整目标索引（如果源在目标之后）
         adjusted_target = target_index
-        if self._drag_source_index < target_index:
+        if source_idx > target_index:
+            adjusted_target = target_index
+        else:
             adjusted_target = target_index - 1
         
         devices.insert(adjusted_target, source_device)
@@ -161,18 +155,23 @@ class DeviceCardGrid(ft.Container):
         self._drag_target_index = None
     
     def _highlight_target(self, target_index: int):
-        """高亮目标卡片"""
+        """高亮目标卡片（通过 DragTarget → Draggable → Stack → Card 找到内部卡片的 Container）"""
         self._rebuild_grid()
         if 0 <= target_index < len(self.grid.controls):
-            target_card = self.grid.controls[target_index]
-            if not isinstance(target_card, AddDeviceCard):
-                target_card.border = ft.Border.all(width=2, color=Colors.PRIMARY)
-                target_card.shadow = ft.BoxShadow(
-                    spread_radius=3,
-                    blur_radius=12,
-                    color="#6366F150",
-                )
-                target_card.update()
+            target_control = self.grid.controls[target_index]
+            if isinstance(target_control, ft.DragTarget):
+                # DragTarget → Draggable → Stack → DeviceCard
+                draggable = target_control.content  # Draggable
+                stack = draggable.content  # Stack
+                card = stack.content[0]  # DeviceCard (first element in Stack content list)
+                if hasattr(card, 'border'):
+                    card.border = ft.Border.all(width=2, color=Colors.PRIMARY)
+                    card.shadow = ft.BoxShadow(
+                        spread_radius=3,
+                        blur_radius=12,
+                        color="#6366F150",
+                    )
+                    card.update()
 
 
 class DeviceListView(ft.ListView):
