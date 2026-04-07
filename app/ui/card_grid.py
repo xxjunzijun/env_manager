@@ -90,12 +90,11 @@ class DeviceCardGrid(ft.Container):
                 on_drag_start=lambda e, idx=i: self._handle_drag_start(e, idx),
                 on_drag_complete=lambda e: self._handle_drag_end(e),
             )
-            # DragTarget 透明覆盖在卡片上,接收放置事件
+            # DragTarget 透明覆盖在卡片上，接收放置事件
             target = ft.DragTarget(
                 content=draggable,
-                on_accept=lambda e, idx=i: self._handle_drop(e, idx),
+                on_accept=lambda e, idx=i: self._handle_drop(idx),
             )
-            target.data = i  # 存储当前卡片的索引
             self.grid.controls.append(target)
 
         # 添加设备按钮卡片放在最后
@@ -113,9 +112,8 @@ class DeviceCardGrid(ft.Container):
         self._drag_source_index = None
         self._rebuild_grid()
 
-    def _handle_drop(self, e: ft.DragTargetEvent, target_index: int):
-        """放置卡片"""
-
+    def _handle_drop(self, target_index: int):
+        """放置卡片（target_index 来自闭包捕获的 DragTarget 创建时的 loop index）"""
         source_idx = self._drag_source_index
         if source_idx is None or source_idx == target_index:
             return
@@ -126,12 +124,13 @@ class DeviceCardGrid(ft.Container):
         devices = self.devices.copy()
         source_device = devices.pop(source_idx)
 
-        # 调整目标索引(如果源在目标之后)
-        adjusted_target = target_index
-        if source_idx > target_index:
-            adjusted_target = target_index
-        else:
+        # 调整目标索引（pop 后插入位置需重新计算）
+        if source_idx < target_index:
+            # 源在前、目标在后：pop 后 target 及之后的索引都-1
             adjusted_target = target_index - 1
+        else:
+            # 源在后、目标在前：pop 后 target 及之前不受影响
+            adjusted_target = target_index
 
         devices.insert(adjusted_target, source_device)
         self.devices = devices
