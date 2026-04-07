@@ -219,6 +219,33 @@ class ConnectDialog(ft.Container):
         password = self.password_field.value or ""
         device_type = list(self.type_segmented.selected)[0]
 
+        # Demo 类型跳过 SSH，直接用模拟数据创建设备
+        if device_type == "demo":
+            self.status_ref.current.value = "[OK] Demo 模式"
+            self.status_ref.current.color = Colors.SUCCESS
+            self.update()
+            demo_data = {
+                "hostname": "demo-server-01",
+                "cpu": "50%",
+                "memory": "4GB/8GB",
+                "disk": "100GB/500GB",
+            }
+            result = Device(
+                name="demo-server-01",
+                device_type="demo",
+                ip_address=host,
+                port=port,
+                username=username,
+                password=password,
+                is_demo=True,
+                is_online=True,
+                ext_info=json.dumps(demo_data),
+            )
+            self.hide()
+            if self.on_connected:
+                self.on_connected(result)
+            return
+
         self.status_ref.current.value = "正在连接..."
         self.status_ref.current.color = Colors.INFO
         self.progress_bar.visible = True
