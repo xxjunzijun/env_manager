@@ -82,17 +82,16 @@ class DeviceCardGrid(ft.Container):
                 on_click=self.on_card_click,
                 on_refresh=self.on_card_refresh,
             )
-            # Stack: 卡片在底层,DragTarget 透明覆盖层在上层接收拖放事件
+            # Stack: 卡片在底层,宽高固定以保证 DragTarget 区域有效
             stack = ft.Stack([card], width=220, height=200)
-            # 用 Draggable 包装 Stack(draggable 属性在 Container 上无效)
+            # 用 Draggable 包装 Stack
             draggable = ft.Draggable(
                 content=stack,
-                data=i,  # 存储设备在 self.devices 中的索引
+                data=i,
                 on_drag_start=self._handle_drag_start,
                 on_drag_complete=self._handle_drag_end,
             )
-            # DragTarget.data 存储自身在 grid.controls 中的索引
-            # on_accept 通过 e.control.data 获取目标索引，_drag_source_index 获取源索引
+            # DragTarget: data=i 存储目标索引，on_accept 通过 e.control.data 读取
             target = ft.DragTarget(
                 content=draggable,
                 data=i,

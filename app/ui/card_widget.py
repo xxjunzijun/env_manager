@@ -41,22 +41,23 @@ def _build_card_content(device: Device, on_refresh, on_edit):
 
     content = ft.Column(
         [
-            # 头部：图标、名称、状态
+            # 头部：图标、IP、状态
             ft.Row(
                 [
                     ft.Text(icon, size=20),
                     ft.Column(
                         [
                             ft.Text(
-                                device.name,
+                                f"{device.ip_address}:{device.port}",
                                 size=14,
                                 weight=ft.FontWeight.W_600,
                                 overflow=ft.TextOverflow.ELLIPSIS,
                             ),
                             ft.Text(
-                                device.display_type,
+                                device.name,
                                 size=11,
                                 color=Colors.TEXT_SECONDARY,
+                                overflow=ft.TextOverflow.ELLIPSIS,
                             ),
                         ],
                         expand=True,
@@ -73,20 +74,7 @@ def _build_card_content(device: Device, on_refresh, on_edit):
             ),
             ft.Divider(height=6, color=Colors.BORDER),
 
-            # 1. IP 地址（最优先）
-            ft.Row(
-                [
-                    ft.Text("📍", size=12),
-                    ft.Text(
-                        f"{device.ip_address}:{device.port}",
-                        size=13,
-                        color=Colors.TEXT_PRIMARY,
-                        weight=ft.FontWeight.W_600,
-                    ),
-                ],
-            ),
-
-            # 2. 设备类型（图标 + 名称）
+            # 2. 设备类型
             ft.Text(
                 f"{icon} {device.display_type}",
                 size=11,
