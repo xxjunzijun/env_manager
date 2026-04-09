@@ -400,14 +400,9 @@ class MainWindow:
             self._show_snack_bar(f"保存失败: {e}")
 
     def _handle_delete_device(self, device_id: int):
-        """删除设备（示例设备不允许删除）"""
+        """删除设备"""
         logger.info(f"删除设备: id={device_id}")
         try:
-            # 禁止删除示例设备
-            device = self.db.get_device(device_id)
-            if device and device.is_demo:
-                self._show_snack_bar("示例设备无法删除")
-                return
             self.db.delete_device(device_id)
             logger.info(f"设备删除完成: id={device_id}")
             self._load_devices()

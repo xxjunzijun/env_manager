@@ -62,6 +62,7 @@ class DeviceCardGrid(ft.Container):
             expand=True,
             width=999999,  # 极大宽度,确保 Row wrap 能填满可用空间
             bgcolor=Colors.BG,
+            padding=16,  # 卡片与背景边界的空隙
         )
 
         self._rebuild_grid()
@@ -86,14 +87,16 @@ class DeviceCardGrid(ft.Container):
             # 用 Draggable 包装 Stack(draggable 属性在 Container 上无效)
             draggable = ft.Draggable(
                 content=stack,
-                data=i,
-                on_drag_start=lambda e, idx=i: self._handle_drag_start(e, idx),
-                on_drag_complete=lambda e: self._handle_drag_end(e),
+                data=i,  # 存储设备在 self.devices 中的索引
+                on_drag_start=self._handle_drag_start,
+                on_drag_complete=self._handle_drag_end,
             )
-            # DragTarget 透明覆盖在卡片上，接收放置事件
+            # DragTarget.data 存储自身在 grid.controls 中的索引
+            # on_accept 通过 e.control.data 获取目标索引，_drag_source_index 获取源索引
             target = ft.DragTarget(
                 content=draggable,
-                on_accept=lambda e, idx=i: self._handle_drop(idx),
+                data=i,
+                on_accept=lambda e: self._handle_drop(e),
             )
             self.grid.controls.append(target)
 
@@ -101,36 +104,37 @@ class DeviceCardGrid(ft.Container):
         if self.add_card:
             self.grid.controls.append(self.add_card)
 
-    def _handle_drag_start(self, e, index: int):
-        """开始拖拽 - 记录源卡片索引"""
-        self._drag_source_index = index
-        logger.debug(f"拖拽开始: index={index}")
+    def _handle_drag_start(self, e):
+        """开始拖拽 - 记录源卡片索引（从 Draggable.data 读取）"""
+        self._drag_source_index = e.data
+        logger.debug(f"拖拽开始: source={self._drag_source_index}")
 
     def _handle_drag_end(self, e):
         """结束拖拽"""
         logger.debug(f"拖拽结束")
         self._drag_source_index = None
-        self._rebuild_grid()
 
-    def _handle_drop(self, target_index: int):
-        """放置卡片（target_index 来自闭包捕获的 DragTarget 创建时的 loop index）"""
+    def _handle_drop(self, e):
+        """放置卡片（target 从 e.control.data 读取，source 从实例变量读取）"""
+        target_idx = e.control.data
         source_idx = self._drag_source_index
-        if source_idx is None or source_idx == target_index:
+        if source_idx is None or target_idx is None or source_idx == target_idx:
+            self._rebuild_grid()
             return
 
-        logger.debug(f"放置: source={source_idx}, target={target_index}")
+        logger.debug(f"放置: source={source_idx}, target={target_idx}")
 
         # 重新排序设备列表
         devices = self.devices.copy()
         source_device = devices.pop(source_idx)
 
         # 调整目标索引（pop 后插入位置需重新计算）
-        if source_idx < target_index:
+        if source_idx < target_idx:
             # 源在前、目标在后：pop 后 target 及之后的索引都-1
-            adjusted_target = target_index - 1
+            adjusted_target = target_idx - 1
         else:
             # 源在后、目标在前：pop 后 target 及之前不受影响
-            adjusted_target = target_index
+            adjusted_target = target_idx
 
         devices.insert(adjusted_target, source_device)
         self.devices = devices

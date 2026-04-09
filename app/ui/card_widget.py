@@ -18,7 +18,9 @@ logger = get_logger("ui.events")
 
 
 def _build_card_content(device: Device, on_refresh, on_edit):
-    """构建设备卡片内容（简化版：只显示 IP、用户名、标签）"""
+    """构建设备卡片内容
+    优先级：IP → 设备类型 → 链接类型 → 分组 → 标签 → 备注
+    """
     type_icons = {"server": "[SVR]", "switch": "[SW]", "demo": "[DEMO]"}
     icon = type_icons.get(device.device_type, "[DEV]")
     status_color = get_status_color(device.is_online)
@@ -28,11 +30,14 @@ def _build_card_content(device: Device, on_refresh, on_edit):
     tags = device.tags_list
     tags_display = ""
     if tags:
-        # 只显示前3个标签
         display_tags = tags[:3]
         tags_display = " ".join([f"[{t}]" for t in display_tags])
         if len(tags) > 3:
             tags_display += f" +{len(tags) - 3}"
+
+    # 链接类型
+    conn_icon = "🔐" if device.ssh_key_path else "🔑"
+    conn_text = "密钥" if device.ssh_key_path else "密码"
 
     content = ft.Column(
         [
@@ -67,40 +72,45 @@ def _build_card_content(device: Device, on_refresh, on_edit):
                 alignment=ft.MainAxisAlignment.START,
             ),
             ft.Divider(height=6, color=Colors.BORDER),
-            
-            # IP 地址
+
+            # 1. IP 地址（最优先）
             ft.Row(
                 [
                     ft.Text("📍", size=12),
                     ft.Text(
                         f"{device.ip_address}:{device.port}",
-                        size=12,
+                        size=13,
                         color=Colors.TEXT_PRIMARY,
-                        weight=ft.FontWeight.W_500,
+                        weight=ft.FontWeight.W_600,
                     ),
                 ],
             ),
-            
-            # 用户名
+
+            # 2. 设备类型（图标 + 名称）
             ft.Text(
-                f"用户: {device.username}",
+                f"{icon} {device.display_type}",
                 size=11,
                 color=Colors.TEXT_SECONDARY,
             ),
-            
-            # 密码（默认隐藏）
+
+            # 3. 链接类型（🔑密码 或 🔐密钥）
             ft.Row(
                 [
-                    ft.Text("🔑", size=12),
-                    ft.Text(
-                        "••••••",
-                        size=12,
-                        color=Colors.TEXT_SECONDARY,
-                    ),
+                    ft.Text(conn_icon, size=11),
+                    ft.Text(conn_text, size=11, color=Colors.TEXT_SECONDARY),
+                    ft.Text(f" · {device.username}", size=11, color=Colors.TEXT_SECONDARY),
                 ],
             ),
-            
-            # 标签
+
+            # 4. 分组（如果有）
+            ft.Text(
+                f"📁 {device.group}" if device.group else "",
+                size=11,
+                color=Colors.TEXT_SECONDARY,
+                visible=bool(device.group),
+            ),
+
+            # 5. 标签
             ft.Container(
                 content=ft.Text(
                     tags_display,
@@ -109,9 +119,18 @@ def _build_card_content(device: Device, on_refresh, on_edit):
                 ),
                 padding=ft.Padding(0, 4, 0, 0),
             ) if tags_display else ft.Container(),
-            
+
+            # 6. 备注（description）
+            ft.Text(
+                device.description or "",
+                size=10,
+                color=Colors.TEXT_DISABLED,
+                overflow=ft.TextOverflow.ELLIPSIS,
+                visible=bool(device.description),
+            ),
+
             ft.Container(expand=True),
-            
+
             # 底部按钮
             ft.Row(
                 [
